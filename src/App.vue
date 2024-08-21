@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="app-container">
         <header-compo></header-compo>
         <middle-compo></middle-compo>
         <footer-compo></footer-compo>

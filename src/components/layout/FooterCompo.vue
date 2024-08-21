@@ -22,15 +22,6 @@ export default {
 </script>
 
 <style scoped>
-.footer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #373a40;
-    user-select: none;
-    height: 80px;
-}
-
 .button_add {
     width: 50px;
     height: 50px;
@@ -48,7 +39,7 @@ export default {
 }
 
 .button_add .icon_plus {
-    width: 24px; /* 아이콘의 크기 조정 */
+    width: 24px;
     height: 24px;
 }
 
