@@ -1,6 +1,6 @@
 <template>
     <div class="footer">
-        <button class="button_add">
+        <button class="button_add" @click="addCapsule">
             <svg
                 class="icon_plus"
                 xmlns="http://www.w3.org/2000/svg"
@@ -18,6 +18,12 @@
 <script>
 export default {
     name: 'FooterCompo',
+    methods: {
+        addCapsule() {
+            console.log('Button clicked, navigating to add capsule page.');
+            this.$router.push('/capsule');
+        },
+    },
 };
 </script>
 
