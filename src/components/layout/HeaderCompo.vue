@@ -6,7 +6,7 @@
             />
         </svg>
 
-        <h2 class="title_header">Kapsule</h2>
+        <h2 class="title_header" @click="goToMain">Kapsule</h2>
 
         <img class="icon_kakao" src="@/assets/icon_kakao.png" alt="KakaoTalk Icon" />
     </div>
@@ -15,17 +15,16 @@
 <script>
 export default {
     name: 'HeaderCompo',
+    methods: {
+        goToMain() {
+            console.log('Title clicked, navigating to home.');
+            this.$router.push('/');
+        },
+    },
 };
 </script>
 
 <style scoped>
-.header {
-    align-items: center;
-    justify-content: space-between;
-    background-color: #373a40;
-    user-select: none;
-}
-
 .icon_mypage {
     width: 40px;
     height: 40px;
@@ -37,6 +36,7 @@ export default {
     color: #ffffff;
     font-family: 'Piedra', cursive;
     margin: 0;
+    cursor: pointer;
 }
 
 .icon_kakao {

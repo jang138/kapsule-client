@@ -1,17 +1,9 @@
 <template>
-    <router-view>
-        <MiddleFront />
-    </router-view>
+    <router-view></router-view>
 </template>
 
 <script>
-import MiddleFront from '@/components/layout/MiddleFront.vue';
-
-export default {
-    components: {
-        MiddleFront,
-    },
-};
+export default {};
 </script>
 
 <style scoped></style>
