@@ -109,6 +109,7 @@ const refreshUserLocation = () => {
     width: 100%;
     height: 100%;
     user-select: none;
+    font-family: 'Nanum Gothic', sans-serif;
 }
 
 .map-container {
@@ -128,6 +129,7 @@ const refreshUserLocation = () => {
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
+    font-family: 'Nanum Gothic', sans-serif;
 }
 
 .refresh-location-btn:active {

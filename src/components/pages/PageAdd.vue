@@ -7,6 +7,53 @@
         <div class="location-info" v-if="address">
             <p>현재 위치 : {{ address }}</p>
         </div>
+
+        <!-- 타임캡슐 폼 그룹 (타이틀, 콘텐츠 내용, 사진 추가, 개봉일 설정, 비공개 설정) -->
+        <div class="time-capsule-form-group">
+            <!-- 타임캡슐 타이틀 입력 -->
+            <div class="form-group">
+                <input type="text" id="title" v-model="title" placeholder="타임캡슐 타이틀 입력" />
+            </div>
+
+            <!-- 타임캡슐 콘텐츠 내용 -->
+            <div class="input-group">
+                <textarea
+                    id="time_capsule_content"
+                    v-model="content"
+                    class="editable"
+                    placeholder="타임캡슐 콘텐츠 내용"
+                    rows="6"
+                ></textarea>
+                <div id="char-count" class="char-count">{{ content.length }}/100</div>
+            </div>
+
+            <!-- 사진 추가 -->
+            <div class="form-group">
+                <label for="image">사진 추가</label>
+                <input type="file" id="image" @change="onImageUpload" />
+                <div v-if="image" class="image-preview">
+                    <img :src="image" alt="Uploaded Image" />
+                </div>
+            </div>
+
+            <!-- 타임캡슐 개봉일 설정 -->
+            <div class="form-group">
+                <label>타임캡슐 개봉일 설정</label>
+                <div>
+                    <label><input type="radio" v-model="openingDate" value="5일 뒤" /> 5일 뒤</label>
+                    <label><input type="radio" v-model="openingDate" value="10일 뒤" /> 10일 뒤</label>
+                    <label><input type="radio" v-model="openingDate" value="30일 뒤" /> 30일 뒤</label>
+                    <label><input type="radio" v-model="openingDate" value="날짜 세부 선택" /> 날짜 세부 선택</label>
+                </div>
+            </div>
+
+            <!-- 타임캡슐 비공개 설정 -->
+            <div class="form-group">
+                <label><input type="checkbox" v-model="isPrivate" /> 타임캡슐 비공개</label>
+            </div>
+            <!-- 생성 버튼 -->
+            <button @click="createTimeCapsule">생성</button>
+        </div>
     </div>
 </template>
 
@@ -18,6 +65,13 @@ const mapInstance = ref(null);
 const userLocation = ref(null);
 const marker = ref(null);
 const address = ref('');
+
+// 타임캡슐 폼 관련 상태 관리
+const title = ref('');
+const content = ref('');
+const image = ref(null);
+const openingDate = ref('');
+const isPrivate = ref(false);
 
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
@@ -63,12 +117,10 @@ const refreshUserLocation = () => {
                 mapInstance.value.setCenter(userLocation.value);
                 mapInstance.value.setLevel(1);
 
-                // 기존 마커 제거
                 if (marker.value) {
                     marker.value.setMap(null);
                 }
 
-                // 새로운 마커 생성
                 marker.value = new window.kakao.maps.Marker({
                     position: userLocation.value,
                     map: mapInstance.value,
@@ -76,7 +128,6 @@ const refreshUserLocation = () => {
                     draggable: false,
                 });
 
-                // Geocoder를 이용한 주소 변환
                 const geocoder = new window.kakao.maps.services.Geocoder();
                 geocoder.coord2Address(lng, lat, (result, status) => {
                     if (status === window.kakao.maps.services.Status.OK) {
@@ -94,14 +145,50 @@ const refreshUserLocation = () => {
         console.error('Geolocation is not supported by this browser.');
     }
 };
+
+const createTimeCapsule = () => {
+    console.log('타이틀:', title.value);
+    console.log('콘텐츠 내용:', content.value);
+    console.log('사진:', image.value);
+    console.log('개봉일:', openingDate.value);
+    console.log('비공개 여부:', isPrivate.value);
+};
+
+const onImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            image.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+};
 </script>
 
 <style scoped>
+#title {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    font-size: 1.2em;
+    font-weight: bold;
+    outline: none;
+    width: 100%;
+    background-color: #f9f9f9;
+}
+
 .container {
+    display: flex;
     flex-direction: column;
     height: 100%;
     width: 100%;
     user-select: none;
+    font-family: 'Nanum Gothic', sans-serif;
+    background-color: #f9f9f9;
 }
 
 .map-wrapper {
@@ -127,6 +214,7 @@ const refreshUserLocation = () => {
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
+    font-family: 'Nanum Gothic', sans-serif;
 }
 
 .refresh-location-btn:active {
@@ -135,9 +223,59 @@ const refreshUserLocation = () => {
 
 .location-info {
     padding: 10px;
-    background-color: #f5f5f5;
+    background-color: #f9f9f9;
     border-top: 1px solid #ccc;
     text-align: left;
     width: 100%;
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+/* 타임캡슐 폼 그룹 스타일 */
+.time-capsule-form-group {
+    margin: 0 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 폼 요소들 */
+.form-group {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+textarea.editable {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 0.9em;
+    color: #888;
+}
+
+.image-preview img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    font-size: 1em;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
 }
 </style>
