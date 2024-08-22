@@ -11,6 +11,8 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
+const marker = ref(null); // 사용자 위치를 나타내는 마커
+const infowindow = ref(null); // 사용자 위치에 대한 정보창
 
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
@@ -59,24 +61,39 @@ const refreshUserLocation = () => {
                 mapInstance.value.setCenter(userLocation.value);
                 mapInstance.value.setLevel(1);
 
-                const marker = new window.kakao.maps.Marker({
+                // 기존 마커와 정보창 제거
+                if (marker.value) {
+                    marker.value.setMap(null);
+                }
+                if (infowindow.value) {
+                    infowindow.value.close();
+                }
+
+                // 새로운 마커 생성
+                marker.value = new window.kakao.maps.Marker({
                     position: userLocation.value,
                     map: mapInstance.value,
                     title: '사용자의 위치',
                 });
 
-                const infowindow = new window.kakao.maps.InfoWindow({
-                    content: '<div style="padding:5px;">현재 나의 위치</div>',
+                // Geocoder를 이용한 주소 변환
+                const geocoder = new window.kakao.maps.services.Geocoder();
+                geocoder.coord2Address(lng, lat, (result, status) => {
+                    if (status === window.kakao.maps.services.Status.OK) {
+                        const address = result[0].address.address_name;
+
+                        // 새로운 정보창 생성
+                        infowindow.value = new window.kakao.maps.InfoWindow({
+                            content: `<div style="padding:5px;">현재 나의 위치<br>주소: ${address}</div>`,
+                        });
+                        infowindow.value.open(mapInstance.value, marker.value);
+                    } else {
+                        console.error('Failed to convert address.');
+                    }
                 });
-                infowindow.open(mapInstance.value, marker);
             },
             (error) => {
                 console.error('Error getting user location: ', error);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0,
             },
         );
     } else {
@@ -101,9 +118,9 @@ const refreshUserLocation = () => {
 .refresh-location-btn {
     position: absolute;
     top: 200px;
-    right: 3px;
+    right: 4px;
     z-index: 10;
-    padding: 6px;
+    padding: 5px;
     font-size: 16px;
     background-color: #fff;
     border: 1px solid #ccc;
