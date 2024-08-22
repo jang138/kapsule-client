@@ -108,6 +108,7 @@ const refreshUserLocation = () => {
     position: relative;
     width: 100%;
     height: 100%;
+    user-select: none;
 }
 
 .map-container {
@@ -119,7 +120,7 @@ const refreshUserLocation = () => {
 .refresh-location-btn {
     position: absolute;
     top: 200px;
-    right: 4px;
+    right: 3px;
     z-index: 10;
     padding: 5px;
     font-size: 16px;
