@@ -74,6 +74,7 @@ const refreshUserLocation = () => {
                     position: userLocation.value,
                     map: mapInstance.value,
                     title: '사용자의 위치',
+                    draggable: false,
                 });
 
                 // Geocoder를 이용한 주소 변환
@@ -128,7 +129,7 @@ const refreshUserLocation = () => {
     cursor: pointer;
 }
 
-.refresh-location-btn:hover {
+.refresh-location-btn:active {
     background-color: #f0f0f0;
 }
 </style>
