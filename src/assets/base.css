@@ -7,6 +7,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    /* height: 94vh; */
     justify-content: center;
     align-items: center;
 }
@@ -21,6 +22,7 @@ body {
 
 .header {
     height: 10%;
+    /* height: 80px; */
     align-items: center;
     justify-content: space-between;
     background-color: #373a40;
@@ -39,6 +41,7 @@ body {
 
 .footer {
     height: 10%;
+    /* height: 80px; */
     display: flex;
     justify-content: center;
     align-items: center;
