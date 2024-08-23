@@ -3,7 +3,7 @@
         <div class="map-container" ref="mapContainer"></div>
         <button class="refresh-location-btn" @click="refreshUserLocation">🔄</button>
         <div class="location-info" v-if="address">
-            <p>현재 위치 : {{ address }}</p>
+            <p class="location-content">현재 위치 : {{ address }}</p>
         </div>
     </div>
 </template>
@@ -149,10 +149,23 @@ const refreshUserLocation = () => {
 }
 
 .location-info {
-    padding: 10px;
+    display: flex;
+    margin: 0px;
     background-color: #f5f5f5;
     border-top: 1px solid #ccc;
     text-align: left;
     width: 100%;
+    height: 10%;
+    justify-content: center;
+    align-items: center;
+}
+
+.location-content {
+    color: #2c3e50;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 1.2em;   
+    font-weight: bold;
+    margin: 0;
+    cursor: pointer;
 }
 </style>
