@@ -62,11 +62,11 @@ const refreshUserLocation = () => {
                 userLocation.value = new window.kakao.maps.LatLng(lat, lng);
                 mapInstance.value.setCenter(userLocation.value);
                 mapInstance.value.setLevel(1);
-                   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                         <circle cx="50" cy="40" r="30" fill="#FF0000" opacity="0.2"/>
                         <circle cx="50" cy="40" r="15" fill="#FF0000"/>
                     </svg>`;
-                    const encodedSvg = btoa(svgString);
+                const encodedSvg = btoa(svgString);
 
                 // 기존 마커 제거
                 if (marker.value) {
@@ -79,13 +79,13 @@ const refreshUserLocation = () => {
                     map: mapInstance.value,
                     title: '사용자의 위치',
                     draggable: false,
-                     image: new window.kakao.maps.MarkerImage(
-                            `data:image/svg+xml;base64,${encodedSvg}`,
-                            new window.kakao.maps.Size(50, 50), // 아이콘 크기
-                            {
-                                offset: new window.kakao.maps.Point(25, 25) // 아이콘의 중심 점
-                            }
-                        )
+                    image: new window.kakao.maps.MarkerImage(
+                        `data:image/svg+xml;base64,${encodedSvg}`,
+                        new window.kakao.maps.Size(50, 50), // 아이콘 크기
+                        {
+                            offset: new window.kakao.maps.Point(25, 25), // 아이콘의 중심 점
+                        },
+                    ),
                 });
 
                 // Geocoder를 이용한 주소 변환

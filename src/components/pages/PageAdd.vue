@@ -51,8 +51,11 @@
             <div class="form-group">
                 <label><input type="checkbox" v-model="isPrivate" /> 타임캡슐 비공개</label>
             </div>
+
             <!-- 생성 버튼 -->
-            <button @click="createTimeCapsule">생성</button>
+            <div class="button-wrapper">
+                <button @click="createTimeCapsule">생성</button>
+            </div>
         </div>
     </div>
 </template>
@@ -230,14 +233,12 @@ const onImageUpload = (event) => {
     font-family: 'Nanum Gothic', sans-serif;
 }
 
-/* 타임캡슐 폼 그룹 스타일 */
 .time-capsule-form-group {
-    margin: 0 10px;
+    margin: 0 15px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* 폼 요소들 */
 .form-group {
     margin-bottom: 10px;
     margin-top: 10px;
@@ -265,17 +266,29 @@ textarea.editable {
     margin-top: 5px;
 }
 
+.button-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
 button {
     padding: 10px 15px;
-    font-size: 1em;
-    background-color: #4caf50;
-    color: white;
+    font-size: 12pt;
+    font-weight: bold;
+    width: 100px;
+    background-color: #686d76;
+    color: #eeeeee;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #758694;
+}
+
+button:active {
+    background-color: #405d72;
 }
 </style>
