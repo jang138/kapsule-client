@@ -2,6 +2,9 @@
     <div class="map-wrapper">
         <div class="map-container" ref="mapContainer"></div>
         <button class="refresh-location-btn" @click="refreshUserLocation">🔄</button>
+        <div class="location-info" v-if="address">
+            <p>현재 위치 : {{ address }}</p>
+        </div>
     </div>
 </template>
 
@@ -11,8 +14,8 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
-const marker = ref(null); // 사용자 위치를 나타내는 마커
-const infowindow = ref(null); // 사용자 위치에 대한 정보창
+const marker = ref(null);
+const address = ref('');
 
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
@@ -34,7 +37,6 @@ const loadKakaoMap = (container) => {
                 center: new window.kakao.maps.LatLng(33.450701, 126.570667),
                 level: 1,
             };
-
             mapInstance.value = new window.kakao.maps.Map(container, options);
 
             const zoomControl = new window.kakao.maps.ZoomControl();
@@ -60,13 +62,15 @@ const refreshUserLocation = () => {
                 userLocation.value = new window.kakao.maps.LatLng(lat, lng);
                 mapInstance.value.setCenter(userLocation.value);
                 mapInstance.value.setLevel(1);
+                   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="40" r="30" fill="#FF0000" opacity="0.2"/>
+                        <circle cx="50" cy="40" r="15" fill="#FF0000"/>
+                    </svg>`;
+                    const encodedSvg = btoa(svgString);
 
-                // 기존 마커와 정보창 제거
+                // 기존 마커 제거
                 if (marker.value) {
                     marker.value.setMap(null);
-                }
-                if (infowindow.value) {
-                    infowindow.value.close();
                 }
 
                 // 새로운 마커 생성
@@ -75,21 +79,22 @@ const refreshUserLocation = () => {
                     map: mapInstance.value,
                     title: '사용자의 위치',
                     draggable: false,
+                     image: new window.kakao.maps.MarkerImage(
+                            `data:image/svg+xml;base64,${encodedSvg}`,
+                            new window.kakao.maps.Size(50, 50), // 아이콘 크기
+                            {
+                                offset: new window.kakao.maps.Point(25, 25) // 아이콘의 중심 점
+                            }
+                        )
                 });
 
                 // Geocoder를 이용한 주소 변환
                 const geocoder = new window.kakao.maps.services.Geocoder();
                 geocoder.coord2Address(lng, lat, (result, status) => {
                     if (status === window.kakao.maps.services.Status.OK) {
-                        const address = result[0].address.address_name;
-
-                        // 새로운 정보창 생성
-                        infowindow.value = new window.kakao.maps.InfoWindow({
-                            content: `<div style="padding:5px;">현재 나의 위치<br>주소: ${address}</div>`,
-                        });
-                        infowindow.value.open(mapInstance.value, marker.value);
+                        address.value = result[0].address.address_name;
                     } else {
-                        console.error('Failed to convert address.');
+                        address.value = 'Failed to convert address.';
                     }
                 });
             },
@@ -104,16 +109,22 @@ const refreshUserLocation = () => {
 </script>
 
 <style scoped>
+.container {
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    user-select: none;
+}
+
 .map-wrapper {
     position: relative;
     width: 100%;
     height: 100%;
-    user-select: none;
 }
 
 .map-container {
     width: 100%;
-    height: 100%;
+    height: 90%;
     background-color: #e0e0e0;
 }
 
@@ -132,5 +143,13 @@ const refreshUserLocation = () => {
 
 .refresh-location-btn:active {
     background-color: #f0f0f0;
+}
+
+.location-info {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ccc;
+    text-align: left;
+    width: 100%;
 }
 </style>
