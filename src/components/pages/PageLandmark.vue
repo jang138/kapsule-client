@@ -23,7 +23,7 @@
                     {{ region }}
                 </label>
             </div>
-            <div class="landmark-list">
+            <div v-if="filteredLandmarks.length" class="landmark-list">
                 <div
                     class="landmark-item"
                     v-for="landmark in filteredLandmarks"
@@ -71,13 +71,15 @@
                     </div>
                 </div>
             </div>
+            <!-- 비어 있을 때 표시할 메시지 -->
+            <div v-else class="no-results">결과가 없습니다..</div>
         </div>
     </div>
 </template>
 
 <script>
 import { useLandmarkStore } from '@/stores/landmark-store';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue'; // onMounted 훅 추가
 import { useRouter } from 'vue-router';
 
 export default {
@@ -103,6 +105,15 @@ export default {
         const toggleOptions = () => {
             showOptions.value = !showOptions.value;
         };
+
+        // 데이터 불러오기
+        onMounted(async () => {
+            try {
+                await store.fetchLandmarks(); // 데이터를 불러옴
+            } catch (error) {
+                console.error('Failed to fetch landmarks:', error);
+            }
+        });
 
         return {
             searchQuery,
@@ -230,5 +241,12 @@ export default {
     background-color: transparent;
     border: none;
     color: black;
+}
+
+.no-results {
+    text-align: center;
+    font-size: 18px;
+    color: #888;
+    margin-top: 20px;
 }
 </style>
