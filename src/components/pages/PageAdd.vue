@@ -242,6 +242,8 @@ html {
     user-select: none;
     font-family: 'Nanum Gothic', sans-serif;
     background-color: #f9f9f9;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .map-wrapper {
