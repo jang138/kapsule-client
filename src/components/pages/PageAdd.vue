@@ -200,6 +200,7 @@ const createTimeCapsule = () => {
 };
 
 // 이미지를 선택하는 함수
+// TODO 이미지 선택창이 두 번 연속으로 나타나는 오류 발생
 const selectImage = (index) => {
     selectedIndex.value = index;
     fileInput.value.click();
@@ -348,7 +349,7 @@ html {
 
 .image-box {
     width: 30%;
-    height: 210px;
+    aspect-ratio: 1 / 1;
     border: 1px solid #a2b5bb;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
