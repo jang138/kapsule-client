@@ -30,13 +30,12 @@ body {
 .middle {
     justify-content: center;
     align-items: center;
-    height: 80%;
+    height: 82%;
     box-sizing: border-box;
 }
 
 .footer {
-    height: 10%;
-    display: flex;
+    height: 8%;
     justify-content: center;
     align-items: center;
     background-color: #373a40;
