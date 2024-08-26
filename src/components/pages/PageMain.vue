@@ -11,9 +11,10 @@
 <script setup>
 import { useTimelineStore } from '@/stores/timelineStore';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
+const router = useRouter();
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
@@ -81,6 +82,16 @@ const updateTimelineMarkers = () => {
             position: position,
             map: mapInstance.value,
             title: item.title,
+        });
+
+        window.kakao.maps.event.addListener(marker, 'click', () => {
+            router.push({
+                name: 'CapsuleDetail',
+                params: {
+                    lat: item.coordinates.lat,
+                    lng: item.coordinates.lng,
+                },
+            });
         });
 
         timelineMarkers.value.push(marker);

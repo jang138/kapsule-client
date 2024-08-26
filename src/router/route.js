@@ -1,6 +1,7 @@
 import MiddleFront from '@/components/layout/MiddleFront.vue';
 import LandmarkDetail from '@/components/pages/LandmarkDetail.vue';
 import PageAdd from '@/components/pages/PageAdd.vue';
+import PageCapsuleDetail from '@/components/pages/PageCapsuleDetail.vue';
 import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
@@ -39,6 +40,12 @@ const routes = [
                 path: 'landmark/:id',
                 component: LandmarkDetail,
                 name: 'LandmarkDetail',
+            },
+            {
+                path: 'capsule/:lat/:lng',
+                component: PageCapsuleDetail,
+                name: 'CapsuleDetail',
+                props: true,
             },
             {
                 path: '/:catchAll(.*)',
