@@ -1,5 +1,5 @@
 <template>
-    <div class="footer">
+    <div :style="{ display: isHidden ? 'none' : 'flex' }" class="footer">
         <button class="button_add" @click="addCapsule">
             <svg
                 class="icon_plus"
@@ -13,7 +13,7 @@
             </svg>
         </button>
 
-         <button class="button_add" @click="appMyPage">
+        <button class="button_add" @click="appMyPage">
             <svg
                 class="icon_plus"
                 xmlns="http://www.w3.org/2000/svg"
@@ -29,10 +29,18 @@
 </template>
 
 <script>
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
 export default {
     name: 'FooterCompo',
-    methods: {
-        addCapsule() {
+    setup() {
+        const route = useRoute();
+        const router = useRouter();
+
+        const isHidden = computed(() => route.path === '/capsule');
+
+        function addCapsule() {
             console.log('Button clicked, navigating to add capsule page.');
             this.$router.push('/capsule');
         },
@@ -40,6 +48,13 @@ export default {
             console.log('마이페이지 이동.');
             this.$router.push('/myPage');
         },
+            router.push('/capsule');
+        }
+
+        return {
+            isHidden,
+            addCapsule,
+        };
     },
 };
 </script>
