@@ -25,6 +25,19 @@
                 <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
             </svg>
         </button>
+
+        <button class="button_add" @click="addLandmark">
+            <svg
+                class="icon_plus"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
+                <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+            </svg>
+        </button>
     </div>
 </template>
 
@@ -50,10 +63,16 @@ export default {
             router.push('/myPage');
         }
 
+        function addLandmark() {
+            console.log('랜드마크 이동.');
+            router.push('/landmark');
+        }
+
         return {
             isHidden,
             addCapsule,
             appMyPage,
+            addLandmark,
         };
     },
 };
