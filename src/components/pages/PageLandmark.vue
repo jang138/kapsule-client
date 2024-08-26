@@ -76,7 +76,7 @@
 </template>
 
 <script>
-import { useLandmarkStore } from '@/components/stores/landmark-store';
+import { useLandmarkStore } from '@/stores/landmark-store';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 

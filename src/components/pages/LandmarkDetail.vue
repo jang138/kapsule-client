@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import { useLandmarkStore } from '@/components/stores/landmark-store';
+import { useLandmarkStore } from '@/stores/landmark-store';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router'; // useRoute 훅을 import
 
