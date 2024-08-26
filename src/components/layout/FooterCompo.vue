@@ -42,18 +42,18 @@ export default {
 
         function addCapsule() {
             console.log('Button clicked, navigating to add capsule page.');
-            this.$router.push('/capsule');
-        },
-        appMyPage() {
-            console.log('마이페이지 이동.');
-            this.$router.push('/myPage');
-        },
             router.push('/capsule');
+        }
+
+        function appMyPage() {
+            console.log('마이페이지 이동.');
+            router.push('/myPage');
         }
 
         return {
             isHidden,
             addCapsule,
+            appMyPage,
         };
     },
 };
