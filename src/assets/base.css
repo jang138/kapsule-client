@@ -6,7 +6,7 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
     justify-content: center;
     align-items: center;
 }
@@ -25,24 +25,19 @@ body {
     justify-content: space-between;
     background-color: #373a40;
     user-select: none;
-    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.2), 4px 0px 8px rgba(0, 0, 0, 0.2);
 }
 
 .middle {
     justify-content: center;
     align-items: center;
-    overflow: auto;
-    height: 80%;
+    height: 82%;
     box-sizing: border-box;
-    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.2), 4px 0px 8px rgba(0, 0, 0, 0.2);
 }
 
 .footer {
-    height: 10%;
-    display: flex;
+    height: 8%;
     justify-content: center;
     align-items: center;
     background-color: #373a40;
     user-select: none;
-    box-shadow: -4px 4px 8px rgba(0, 0, 0, 0.2), 4px 4px 8px rgba(0, 0, 0, 0.2);
 }
