@@ -3,8 +3,8 @@ import LandmarkDetail from '@/components/pages/LandmarkDetail.vue';
 import PageAdd from '@/components/pages/PageAdd.vue';
 import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
-import PageNotFound from '@/components/pages/PageNotFound.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
+import PageNotFound from '@/components/pages/PageNotFound.vue';
 
 const routes = [
     {
@@ -23,12 +23,8 @@ const routes = [
                 props: true,
             },
             {
-                path: 'capsule',
+                path: '/capsule/create',
                 component: PageAdd,
-            },
-            {
-                path: '/:catchAll(.*)',
-                component: PageNotFound,
             },
             {
                 path: '/myPage',
@@ -43,6 +39,10 @@ const routes = [
                 path: 'landmark/:id',
                 component: LandmarkDetail,
                 name: 'LandmarkDetail',
+            },
+            {
+                path: '/:catchAll(.*)',
+                component: PageNotFound,
             },
         ],
     },
