@@ -49,5 +49,6 @@ body {
     justify-content: center;
     align-items: center;
     background-color: #373a40;
+    position: relative;
     user-select: none;
 }
