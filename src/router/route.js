@@ -28,7 +28,8 @@ const routes = [
                 component: PageLandmark,
             },
             {
-                path: 'landmark/:id', // 랜드마크 상세 페이지를 위한 경로
+                // 랜드마크 상세 페이지를 위한 경로
+                path: 'landmark/:id',
                 component: LandmarkDetail,
                 name: 'LandmarkDetail',
             },

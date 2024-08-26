@@ -1,4 +1,3 @@
-전체 코드를 아래에 정리했습니다: vue 코드 복사
 <template>
     <div class="container">
         <div class="page-landmark">
@@ -10,19 +9,18 @@
                     style="width: 20px; height: 20px; margin: auto 5px"
                 />
                 <input type="text" placeholder="검색..." v-model="searchQuery" />
-                <button class="search-button">검색</button>
-                <button @click="toggleOptions">옵션</button>
+                <!-- <button class="search-button">검색</button> -->
+                <button class="search-option" @click="toggleOptions">
+                    지역
+                    <span style="font-size: 10px">▼</span>
+                </button>
             </div>
 
             <!-- 검색창 아래에 표시될 체크박스 컨테이너 -->
             <div v-if="showOptions" class="checkbox-container">
-                <label>
-                    <input type="checkbox" v-model="selectedRegions" value="서울" />
-                    서울
-                    <input type="checkbox" v-model="selectedRegions" value="부산" />
-                    부산
-                    <input type="checkbox" v-model="selectedRegions" value="대구" />
-                    대구
+                <label v-for="region in availableRegions" :key="region">
+                    <input type="checkbox" v-model="selectedRegions" :value="region" />
+                    {{ region }}
                 </label>
             </div>
             <div class="landmark-list">
@@ -78,76 +76,43 @@
 </template>
 
 <script>
+import { useLandmarkStore } from '@/components/stores/landmark-store';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+
 export default {
-    data() {
-        return {
-            searchQuery: '',
-            selectedRegions: [],
-            showOptions: false, // 옵션 버튼 클릭 시 체크박스 컨테이너의 표시 여부
-            landmarks: [
-                {
-                    id: 1,
-                    title: '경복궁',
-                    location: '서울특별시 종로구 사직로 161',
-                    daterange: '오전 9:00~오후 6:00 (화요일 휴무)',
-                    image: 'https://mblogthumb-phinf.pstatic.net/MjAxODA0MDVfMTU5/MDAxNTIyOTA0MDczNDgx.9XbBJvQC0Cjd0_vRovae7PCd_96zzyNyQyc1nEtDVuAg.Xn7MGvNx5yiUOFsJUHzs8EBXTRiNvo5igzpZZ9NSYCYg.PNG.royalculture/%EA%B2%BD%EB%B3%B5%EA%B6%81%EC%82%AC%EC%A7%84.png?type=w800',
-                },
-                {
-                    id: 2,
-                    title: '예술의 전당',
-                    location: '서울특별시 서초구 남부순환로 2406',
-                    daterange: '오전 12:00 ~ 오후 10:00 (월요일 휴무)',
-                    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6gGRePRdd51LRhnBPkrkhXrFxUw5tlwdn-Q&s',
-                },
-                {
-                    id: 3,
-                    title: '강남 코엑스',
-                    location: '서울특별시 강남구 영동대로 513',
-                    daterange: '오전 9:00 ~ 오후 10:00',
-                    image: 'https://i.namu.wiki/i/N3HeYeRRnwQahmlYSLl4G3Sb0tq_ZwQMjdEViRy3ruU0tVZA48PKbz30mt3fiHV0r9DvMzo2EiZMj5EKleoqPQ.webp',
-                },
-                {
-                    id: 4,
-                    title: '광안대교',
-                    location: '부산광역시 수영구 광안해변로 219(광안동)',
-                    daterange: `일-목 : 일몰 ~ 24시 <br />
-                                금-토 : 일몰 ~ 02시`,
-                    image: 'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQjJZN3BQ3AX6P8wTwkXBLvriWxMxbUFHc7jcfPHLHgOOov962SVEhFlUquE4mCt-MoY5dpK0GSf-UjqI1aSneU4bhXFKepJ-N-H2Ufyg',
-                },
-                {
-                    id: 5,
-                    title: '서문시장',
-                    location: '대구광역시 중구 큰장로26길 45',
-                    daterange: '오전 9:00~오후 6:30',
-                    image: 'https://upload.wikimedia.org/wikipedia/commons/f/fd/10%EA%B2%BD_%EC%84%9C%EB%AC%B8%EC%8B%9C%EC%9E%A5.jpg',
-                },
-            ],
-            filteredLandmarks: [], // 필터링된 랜드마크를 저장할 배열
-        };
-    },
-    created() {
-        this.filteredLandmarks = this.landmarks; // 초기화 시 모든 랜드마크를 보여줌
-    },
-    methods: {
-        toggleOptions() {
-            this.showOptions = !this.showOptions; // 옵션 버튼 클릭 시 체크박스 컨테이너 토글
-        },
-        filterLandmarks() {
-            this.filteredLandmarks = this.landmarks.filter((landmark) => {
-                const matchesSearchQuery = this.searchQuery ? landmark.title.includes(this.searchQuery) : true;
+    setup() {
+        const store = useLandmarkStore();
+        const router = useRouter();
 
-                const matchesRegion = this.selectedRegions.length
-                    ? this.selectedRegions.some((region) => landmark.location.startsWith(region))
-                    : true;
+        // 검색 및 필터링과 관련된 상태 관리
+        const searchQuery = ref(''); // 사용자 입력을 저장하는 ref 변수
+        const selectedRegions = ref([]);
+        const showOptions = ref(false);
 
-                return matchesSearchQuery && matchesRegion;
-            });
-        },
-        handleClick(landmark) {
+        // Computed properties
+        const availableRegions = computed(() => store.availableRegions);
+        const filteredLandmarks = computed(() => store.filteredLandmarks(searchQuery.value, selectedRegions.value));
+
+        // Methods
+        const handleClick = (landmark) => {
             console.log(`Clicked on ${landmark.title}`);
-            // 예: 상세 페이지로 이동
-            this.$router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
-        },
+            router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
+        };
+
+        const toggleOptions = () => {
+            showOptions.value = !showOptions.value;
+        };
+
+        return {
+            searchQuery,
+            selectedRegions,
+            showOptions,
+            availableRegions,
+            filteredLandmarks,
+            handleClick,
+            toggleOptions,
+        };
     },
 };
 </script>
@@ -158,14 +123,13 @@ export default {
     flex-direction: column;
     height: 100%;
     width: 100%;
-    /* overflow-y: auto; */
     user-select: none;
     font-family: 'Nanum Gothic', sans-serif;
-    background-color: #f9f9f9;
     margin: 20px;
 }
 
 .page-landmark {
+    margin-top: 10px;
     display: flex;
     flex-direction: column;
 }
@@ -173,7 +137,7 @@ export default {
 .search-container {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .search-container input {
@@ -184,6 +148,37 @@ export default {
     border: 1px solid #ccc;
 }
 
+.search-button {
+    background-color: transparent;
+    border: 1px solid rgb(190, 190, 190);
+    border-radius: 2px;
+    color: black;
+    margin-right: 5px;
+}
+
+.search-option {
+    background-color: transparent;
+    border: 1px solid rgb(190, 190, 190);
+    border-radius: 2px;
+    color: black;
+}
+
+.search-option:hover,
+.search-button:hover {
+    background-color: #ebebeb;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.checkbox-container label {
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
 .landmark-list {
     display: flex;
     flex-direction: column;
@@ -192,7 +187,7 @@ export default {
 
 .landmark-photo {
     width: 150px;
-    height: 190px; /* 이미지 크기 조정 */
+    height: 190px;
     overflow: hidden;
     margin-right: 10px;
 }
@@ -235,21 +230,5 @@ export default {
     background-color: transparent;
     border: none;
     color: black;
-    font-size: 24px;
-}
-
-.send-button i {
-    font-size: 24px;
-}
-
-.checkbox-container {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-}
-
-.checkbox-container label {
-    margin-bottom: 5px;
-    cursor: pointer;
 }
 </style>
