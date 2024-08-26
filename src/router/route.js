@@ -4,11 +4,7 @@ import PageAdd from '@/components/pages/PageAdd.vue';
 import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
 import PageNotFound from '@/components/pages/PageNotFound.vue';
-import MiddleFront from '@/components/layout/MiddleFront.vue';
-import PageAdd from '@/components/pages/PageAdd.vue';
-import PageMain from '@/components/pages/PageMain.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
-import PageNotFound from '@/components/pages/PageNotFound.vue';
 
 const routes = [
     {
