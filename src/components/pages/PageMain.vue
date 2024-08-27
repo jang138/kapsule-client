@@ -23,12 +23,15 @@ const address = ref('');
 const isMapReady = ref(false);
 const store = useTimelineStore();
 const timelineMarkers = ref([]);
+const overlays = ref([]);
 const isUserLocationActive = ref(false);
 
 const moveToLocation = (lat, lng) => {
     if (!isMapReady.value || !window.kakao || !window.kakao.maps) return;
 
     const location = new window.kakao.maps.LatLng(lat, lng);
+    userLocation.value = location;
+
     mapInstance.value.setCenter(location);
     mapInstance.value.setLevel(1);
 
@@ -71,9 +74,11 @@ const updateUserMarker = (lat, lng) => {
 const updateTimelineMarkers = () => {
     if (!isMapReady.value || !window.kakao || !window.kakao.maps) return;
 
-    // 기존 타임라인 마커 제거
+    // 기존 타임라인 마커 및 오버레이 제거
     timelineMarkers.value.forEach((marker) => marker.setMap(null));
     timelineMarkers.value = [];
+    overlays.value.forEach((overlay) => overlay.setMap(null));
+    overlays.value = [];
 
     store.timelineItems.forEach((item) => {
         const position = new window.kakao.maps.LatLng(item.coordinates.lat, item.coordinates.lng);
@@ -84,13 +89,33 @@ const updateTimelineMarkers = () => {
             title: item.title,
         });
 
+        // 마커 클릭 시 오버레이 표시
         window.kakao.maps.event.addListener(marker, 'click', () => {
-            router.push({
-                name: 'CapsuleDetail',
-                params: {
-                    lat: item.coordinates.lat,
-                    lng: item.coordinates.lng,
-                },
+            // 기존 오버레이 제거
+            overlays.value.forEach((overlay) => overlay.setMap(null));
+            overlays.value = [];
+
+            const content = `
+            <div class="overlay-content">
+                <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
+                <h3>${item.title}</h3>
+                <p>${item.location}</p>
+                <button class="overlay-btn">자세히 보기</button>
+            </div>
+        `;
+
+            const overlay = new window.kakao.maps.CustomOverlay({
+                content: content,
+                position: position,
+                map: mapInstance.value,
+            });
+
+            overlays.value.push(overlay);
+
+            // "자세히 보기" 버튼 클릭 시 CapsuleDetail 페이지로 이동
+            const overlayBtn = overlay.a.querySelector('.overlay-btn');
+            overlayBtn.addEventListener('click', () => {
+                router.push(`/capsule/${item.coordinates.lat}/${item.coordinates.lng}`);
             });
         });
 
@@ -202,15 +227,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('resize', handleResize);
 
-    // 메모리 누수를 방지하기 위해 타임라인 마커 제거
+    // 메모리 누수를 방지하기 위해 타임라인 마커 및 오버레이 제거
     timelineMarkers.value.forEach((marker) => marker.setMap(null));
+    overlays.value.forEach((overlay) => overlay.setMap(null));
     if (userMarker.value) {
         userMarker.value.setMap(null);
     }
 });
 </script>
 
-<style scoped>
+<style>
 .map-wrapper {
     position: relative;
     width: 100%;
@@ -245,24 +271,73 @@ onBeforeUnmount(() => {
     background-color: #f0f0f0;
 }
 
-.location-info {
-    display: flex;
-    margin: 0px;
-    background-color: #f5f5f5;
-    border-top: 1px solid #ccc;
-    text-align: left;
-    width: 100%;
-    height: 10%;
-    justify-content: center;
-    align-items: center;
+.overlay-content {
+    top: -115px;
+    padding: 10px 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: 'Nanum Gothic', sans-serif;
+    text-align: center;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
-.location-content {
-    color: #2c3e50;
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 1.2em;
+.overlay-content::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    transform: translateX(-50%);
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #f9f9f9;
+}
+
+.overlay-content h3 {
+    margin: 10px 0;
+    font-size: 16px;
     font-weight: bold;
-    margin: 0;
+    color: #333;
+}
+
+.overlay-content p {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.overlay-btn {
+    padding: 5px;
+    font-size: 14px;
+    color: #f9f9f9;
+    background-color: #686d76;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    text-decoration: none;
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+.overlay-btn:hover {
+    background-color: #373a40;
+}
+
+.overlay-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #f9f9f9;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #686d76;
+    transition: color 0.3s ease;
+}
+
+.overlay-close-btn:hover {
+    color: #373a40;
 }
 </style>
