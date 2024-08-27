@@ -112,17 +112,7 @@ export default {
             window.location.reload();
         };
 
-        const goToMain = async () => {
-            const token = localStorage.getItem('jwtToken');
-
-            const response = await axios.get('http://localhost:8088/api/v1/print-kakaoid', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const userData = response.data;
-            console.log(userData);
-
+        const goToMain = () => {
             showPopup.value = false;
             removeListeners();
             router.push('/'); // router.push('/')로 메인 페이지로 이동
