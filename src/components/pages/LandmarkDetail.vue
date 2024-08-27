@@ -7,18 +7,23 @@
         <p><strong>위치:</strong> {{ landmark.location }}</p>
         <p><strong>운영 시간:</strong> <span v-html="landmark.daterange"></span></p>
         <div v-html="landmark.description"></div>
-        <button @click="goBack">Back to List</button>
+        <div class="button-container">
+            <button @click="addMyPage">Add my capsule</button>
+            <button @click="goBack">Back to List</button>
+        </div>
     </div>
 </template>
 
 <script>
 import { useLandmarkStore } from '@/stores/landmark-store';
+import { useTimelineStore } from '@/stores/timelineStore';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router'; // useRoute 훅을 import
 
 export default {
     setup() {
         const store = useLandmarkStore();
+        const timelineStore = useTimelineStore();
         const route = useRoute(); // useRoute 훅 사용
         const router = useRouter(); // useRouter 훅 사용
 
@@ -30,9 +35,28 @@ export default {
             router.push('/landmark'); // useRouter 훅에서 push 사용
         };
 
+        const addMyPage = () => {
+            const newItem = {
+                title: landmark.value.title,
+                dateRange: landmark.value.daterange,
+                location: landmark.value.location,
+                coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng }, // 경도, 위도 값도 추가
+                // latitude: landmark.value.LATITUDE,
+                // longitude: landmark.value.LONGITUDE,
+            };
+            // if (newItem.latitude && newItem.longitude) {
+            if (newItem.coordinates.lat && newItem.coordinates.lng) {
+                timelineStore.addTimelineItem(newItem);
+                router.push('/mypage'); // 타임라인 항목 추가 후 마이 페이지로 이동
+            } else {
+                console.error('newItem error');
+            }
+        };
+
         return {
             landmark,
             goBack,
+            addMyPage,
         };
     },
 };
@@ -51,6 +75,13 @@ export default {
 .landmark-detail-container h2 {
     margin-bottom: 20px;
     text-align: center;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
 }
 
 .landmark-image {
