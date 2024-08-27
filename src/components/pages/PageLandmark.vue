@@ -94,7 +94,11 @@ export default {
 
         // Computed properties
         const availableRegions = computed(() => store.availableRegions);
-        const filteredLandmarks = computed(() => store.filteredLandmarks(searchQuery.value, selectedRegions.value));
+        const filteredLandmarks = computed(() => {
+            return store
+                .filteredLandmarks(searchQuery.value, selectedRegions.value)
+                .filter((landmark) => landmark['capsule-type'] === 2); // capsule-type이 2인 것만 필터링
+        });
 
         // Methods
         const handleClick = (landmark) => {

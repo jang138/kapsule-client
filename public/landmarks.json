@@ -1,7 +1,7 @@
 [
     {
         "id": 1,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "경복궁",
         "location": "서울특별시 종로구 사직로 161",
         "daterange": "오전 9:00~오후 6:00 (화요일 휴무)",
@@ -11,7 +11,7 @@
     },
     {
         "id": 2,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "예술의 전당",
         "location": "서울특별시 서초구 남부순환로 2406",
         "daterange": "오전 12:00 ~ 오후 10:00 (월요일 휴무)",
@@ -21,7 +21,7 @@
     },
     {
         "id": 3,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "강남 코엑스",
         "location": "서울특별시 강남구 영동대로 513",
         "daterange": "오전 9:00 ~ 오후 10:00",
@@ -31,7 +31,7 @@
     },
     {
         "id": 4,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "광안대교",
         "location": "부산광역시 수영구 광안해변로 219(광안동)",
         "daterange": "평일(일-목) : 일몰 - 24시 <br /> 주말(금-토) : 일몰 - 02시",
@@ -41,7 +41,7 @@
     },
     {
         "id": 5,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "서문시장",
         "location": "대구광역시 중구 큰장로26길 45",
         "daterange": "오전 9:00 ~ 오후 6:30",
@@ -51,7 +51,7 @@
     },
     {
         "id": 6,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "강원랜드",
         "location": "강원도 정선군 사북읍 하이원길 265",
         "daterange": "오전 10:00 ~ 오전 06:00",
@@ -61,7 +61,7 @@
     },
     {
         "id": 7,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "롯데월드",
         "location": "서울특별시 송파구 올림픽로 240",
         "daterange": "오전 10:30 ~ 오후 8:30",
@@ -71,7 +71,7 @@
     },
     {
         "id": 8,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "N서울타워",
         "location": "서울특별시 용산구 남산공원길 105",
         "daterange": "오전 10:00 ~ 오후 11:00",
@@ -81,7 +81,7 @@
     },
     {
         "id": 9,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "한라산",
         "location": "제주특별자치도 제주시 1100로 2070-61",
         "daterange": "오전 5:00 ~ 오후 6:00",
@@ -91,7 +91,7 @@
     },
     {
         "id": 10,
-        "capsule-type": 1,
+        "capsule-type": 2,
         "title": "애버랜드",
         "location": "경기도 용인시 에버랜드로 199",
         "daterange": "오전 10:00 ~ 오후 10:00",
