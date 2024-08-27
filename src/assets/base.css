@@ -4,10 +4,10 @@ body {
     overflow-x: hidden;
     margin: 0 auto;
 }
+
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100dvh;
     height: 100dvh;
     justify-content: center;
     align-items: center;
@@ -22,11 +22,12 @@ body {
 }
 
 .header {
-    height: 10%;
+    height: 8%;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     background-color: #373a40;
     user-select: none;
+    position: relative;
 }
 
 .middle {
@@ -48,5 +49,6 @@ body {
     justify-content: center;
     align-items: center;
     background-color: #373a40;
+    position: relative;
     user-select: none;
 }
