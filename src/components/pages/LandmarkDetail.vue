@@ -5,11 +5,10 @@
             <img :src="landmark.image" alt="Landmark Image" />
         </div>
         <p><strong>위치:</strong> {{ landmark.location }}</p>
-        <p><strong>운영 시간:</strong> <span v-html="landmark.daterange"></span></p>
-        <div v-html="landmark.description"></div>
-        <div class="button-container">
-            <button @click="addMyPage">Add my capsule</button>
-            <button @click="goBack">Back to List</button>
+        <p><strong>운영 시간:</strong> <span v-html="landmark.content.daterange"></span></p>
+        <div class="landmark-content">
+            <h3>{{ landmark.content.subtitle }}</h3>
+            <p v-html="landmark.content.text"></p>
         </div>
     </div>
 </template>

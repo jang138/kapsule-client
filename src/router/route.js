@@ -5,6 +5,7 @@ import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
 import PageNotFound from '@/components/pages/PageNotFound.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
+import LandmarkAdd from '@/components/pages/LandmarkAdd.vue';
 
 const routes = [
     {
@@ -43,6 +44,11 @@ const routes = [
                 path: 'landmark/:id',
                 component: LandmarkDetail,
                 name: 'LandmarkDetail',
+            },
+            {
+                path: '/add-landmark',
+                name: 'LandmarkAdd',
+                component: LandmarkAdd, // 새롭게 추가된 페이지 경로
             },
         ],
     },

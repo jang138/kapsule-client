@@ -9,7 +9,7 @@
                     style="width: 20px; height: 20px; margin: auto 5px"
                 />
                 <input type="text" placeholder="검색..." v-model="searchQuery" />
-                <!-- <button class="search-button">검색</button> -->
+                <button class="search-button" @click="goToAddLandmark">추가</button>
                 <button class="search-option" @click="toggleOptions">
                     지역
                     <span style="font-size: 10px">▼</span>
@@ -35,7 +35,7 @@
                     </div>
                     <div class="landmark-info">
                         <h3>{{ landmark.title }}</h3>
-                        <p><strong>운영시간</strong><br /><span v-html="landmark.daterange"></span></p>
+                        <p><strong>운영시간</strong><br /><span v-html="landmark.content.daterange"></span></p>
                         <p>{{ landmark.location }}</p>
                     </div>
                     <div class="landmark-action">
@@ -97,7 +97,7 @@ export default {
         const filteredLandmarks = computed(() => {
             return store
                 .filteredLandmarks(searchQuery.value, selectedRegions.value)
-                .filter((landmark) => landmark['capsule-type'] === 2); // capsule-type이 2인 것만 필터링
+                .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
         });
 
         // Methods
@@ -108,6 +108,10 @@ export default {
 
         const toggleOptions = () => {
             showOptions.value = !showOptions.value;
+        };
+
+        const goToAddLandmark = () => {
+            router.push({ name: 'LandmarkAdd' }); // LandmarkAdd 라우트로 이동
         };
 
         // 데이터 불러오기
@@ -127,6 +131,7 @@ export default {
             filteredLandmarks,
             handleClick,
             toggleOptions,
+            goToAddLandmark,
         };
     },
 };
