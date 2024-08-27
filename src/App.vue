@@ -10,6 +10,7 @@
 import FooterCompo from './components/layout/FooterCompo.vue';
 import HeaderCompo from './components/layout/HeaderCompo.vue';
 import MiddleCompo from './components/layout/MiddleCompo.vue';
+import { useMemberStore } from '@/stores/memberStore';
 
 export default {
     name: 'App',
@@ -17,6 +18,16 @@ export default {
         HeaderCompo,
         MiddleCompo,
         FooterCompo,
+    },
+    setup() {
+        const memberStore = useMemberStore();
+
+        // 앱 초기화 시 store 초기화
+        memberStore.initializeStore();
+
+        return {
+            memberStore,
+        };
     },
 };
 </script>
