@@ -1,15 +1,24 @@
 <template>
-    <div class="landmark-detail-container">
+    <div v-if="landmark" class="landmark-detail-container">
         <h2>{{ landmark.title }}</h2>
         <div class="landmark-image">
             <img :src="landmark.image" alt="Landmark Image" />
         </div>
         <p><strong>위치:</strong> {{ landmark.location }}</p>
-        <p><strong>운영 시간:</strong> <span v-html="landmark.content.daterange"></span></p>
-        <div class="landmark-content">
-            <h3>{{ landmark.content.subtitle }}</h3>
-            <p v-html="landmark.content.text"></p>
+        <p v-if="landmark.content && landmark.content.daterange">
+            <strong>운영 시간:</strong> <span v-html="landmark.content.daterange"></span>
+        </p>
+        <p v-if="landmark.content && landmark.content.subtitle">
+            <strong>{{ landmark.content.subtitle }}</strong>
+        </p>
+        <div v-if="landmark.content && landmark.content.text" v-html="landmark.content.text"></div>
+        <div class="button-container">
+            <button @click="addMyPage">Add my capsule</button>
+            <button @click="goBack">Back to List</button>
         </div>
+    </div>
+    <div v-else>
+        <p>랜드마크 정보를 불러올 수 없습니다. 다시 시도해주세요.</p>
     </div>
 </template>
 
@@ -23,32 +32,45 @@ export default {
     setup() {
         const store = useLandmarkStore();
         const timelineStore = useTimelineStore();
-        const route = useRoute(); // useRoute 훅 사용
-        const router = useRouter(); // useRouter 훅 사용
+        const route = useRoute();
+        const router = useRouter();
 
-        const landmarkId = parseInt(route.params.id); // useRoute 훅에서 id 가져오기
+        const landmarkId = parseInt(route.params.id);
 
-        const landmark = computed(() => store.getLandmarkById(landmarkId));
+        // computed에서 landmark를 가져올 때 content가 유효한지 검사
+        const landmark = computed(() => {
+            const lm = store.getLandmarkById(landmarkId);
+
+            // content가 객체 형태로 파싱된 경우에만 사용
+            if (lm && lm.content && typeof lm.content === 'object') {
+                return lm;
+            } else {
+                console.warn('Landmark content is not in the correct JSON format:', lm);
+                return null; // 또는 빈 객체를 반환할 수 있음
+            }
+        });
 
         const goBack = () => {
-            router.push('/landmark'); // useRouter 훅에서 push 사용
+            router.push('/landmark');
         };
 
         const addMyPage = () => {
-            const newItem = {
-                title: landmark.value.title,
-                dateRange: landmark.value.daterange,
-                location: landmark.value.location,
-                coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng }, // 경도, 위도 값도 추가
-                // latitude: landmark.value.LATITUDE,
-                // longitude: landmark.value.LONGITUDE,
-            };
-            // if (newItem.latitude && newItem.longitude) {
-            if (newItem.coordinates.lat && newItem.coordinates.lng) {
-                timelineStore.addTimelineItem(newItem);
-                router.push('/mypage'); // 타임라인 항목 추가 후 마이 페이지로 이동
+            if (landmark.value) {
+                const newItem = {
+                    title: landmark.value.title,
+                    dateRange: landmark.value.content.daterange,
+                    location: landmark.value.location,
+                    coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng },
+                };
+
+                if (newItem.coordinates.lat && newItem.coordinates.lng) {
+                    timelineStore.addTimelineItem(newItem);
+                    router.push('/mypage');
+                } else {
+                    console.error('Coordinates are missing in newItem');
+                }
             } else {
-                console.error('newItem error');
+                console.error('Landmark is not defined');
             }
         };
 

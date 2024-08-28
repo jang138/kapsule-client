@@ -38,6 +38,7 @@ const routes = [
             {
                 path: 'landmark',
                 component: PageLandmark,
+                name: 'LandmarkList',
             },
             {
                 // 랜드마크 상세 페이지를 위한 경로
@@ -46,7 +47,7 @@ const routes = [
                 name: 'LandmarkDetail',
             },
             {
-                path: '/add-landmark',
+                path: 'add-landmark',
                 name: 'LandmarkAdd',
                 component: LandmarkAdd, // 새롭게 추가된 페이지 경로
             },

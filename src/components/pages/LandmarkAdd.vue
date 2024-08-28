@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axiosInstance from '@/axios';
 
 export default {
     data() {
@@ -78,12 +78,17 @@ export default {
     methods: {
         async submitLandmark() {
             try {
-                const response = await axios.post('/api/landmark/create', this.landmark);
+                const response = await axiosInstance.post('/landmark/create', this.landmark);
                 alert(response.data); // 성공 메시지 표시
-                this.$router.push({ name: 'LandmarkList' }); // 랜드마크 목록 페이지로 이동
+                this.$router.push('/landmark'); // 랜드마크 목록 페이지로 이동
             } catch (error) {
-                console.error('랜드마크 추가 중 오류 발생:', error.response.data);
-                alert('랜드마크 저장 중 오류가 발생했습니다.');
+                if (error.response && error.response.data) {
+                    console.error('랜드마크 추가 중 오류 발생:', error.response.data);
+                    alert(error.response.data);
+                } else {
+                    console.error('예기치 않은 오류가 발생했습니다:', error);
+                    alert('랜드마크 저장 중 오류가 발생했습니다.');
+                }
             }
         },
     },
