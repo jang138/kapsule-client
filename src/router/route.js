@@ -5,6 +5,7 @@ import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
 import PageNotFound from '@/components/pages/PageNotFound.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
+import OAuthCompo from '@/components/pages/OAuthCompo.vue';
 
 const routes = [
     {
@@ -43,6 +44,11 @@ const routes = [
                 path: 'landmark/:id',
                 component: LandmarkDetail,
                 name: 'LandmarkDetail',
+            },
+            {
+                path: '/auth/oauth-response/:token/:expirationTime',
+                name: 'OAuth',
+                component: OAuthCompo,
             },
         ],
     },

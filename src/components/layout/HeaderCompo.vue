@@ -5,65 +5,128 @@
 
         <!-- 팝업 메뉴 -->
         <div v-if="showPopup" class="popup-menu">
-            <p class="user-name">이름</p>
-            <p class="user-nickname">닉네임</p>
+            <p class="user-name">{{ userNickname }}</p>
+            <p class="user-role">{{ userRoleText }}</p>
             <button class="logout-button" @click="logout">로그아웃</button>
         </div>
     </div>
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import { useMemberStore } from '@/stores/memberStore';
+
 export default {
     name: 'HeaderCompo',
-    data() {
-        return {
-            showPopup: false,
-        };
-    },
-    methods: {
-        goToMain() {
-            console.log('Title clicked, navigating to home.');
-            this.showPopup = false;
-            this.$router.push('/');
-        },
-        togglePopup() {
-            this.showPopup = !this.showPopup;
+    setup() {
+        const memberStore = useMemberStore();
+        const router = useRouter(); // Vue Router에 접근하기 위해 useRouter를 사용합니다.
 
-            if (this.showPopup) {
-                document.addEventListener('click', this.handleOutsideClick);
-                window.addEventListener('beforeunload', this.closePopup);
-            } else {
-                this.removeListeners();
+        const isLoggedIn = computed(() => memberStore.isLoggedIn);
+        const userRole = ref('');
+        const userNickname = ref('');
+        const userRoleText = computed(() => {
+            switch (userRole.value) {
+                case 'ROLE_ADMIN':
+                    return '관리자';
+                case 'ROLE_FREEUSER':
+                    return '일반회원';
+                case 'ROLE_PAIDUSER':
+                    return '구독회원';
+                default:
+                    return ''; // 기본값
             }
-        },
-        handleOutsideClick(event) {
-            const popup = this.$el.querySelector('.popup-menu');
-            const iconKakao = this.$el.querySelector('.icon_kakao');
+        });
+
+        // `ref`를 사용하여 `showPopup` 상태를 반응형으로 관리
+        const showPopup = ref(false);
+
+        const fetchUserInfo = async () => {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (!token) {
+                    console.warn('No JWT token found');
+                    return;
+                }
+
+                const response = await axios.get('http://localhost:8088/api/v1/member-info', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                const userData = response.data;
+
+                console.log(userData);
+
+                userNickname.value = userData.nickname;
+                userRole.value = userData.role;
+            } catch (error) {
+                console.error('Failed to fetch user info:', error);
+            }
+        };
+
+        const togglePopup = () => {
+            if (!isLoggedIn.value) {
+                window.location.href = 'http://localhost:8088/api/v1/auth/oauth2/kakao';
+                return;
+            }
+
+            showPopup.value = !showPopup.value;
+
+            if (showPopup.value) {
+                fetchUserInfo(); // 팝업이 열릴 때 사용자 정보를 가져옴
+                document.addEventListener('click', handleOutsideClick);
+                window.addEventListener('beforeunload', closePopup);
+            } else {
+                removeListeners();
+            }
+        };
+
+        const handleOutsideClick = (event) => {
+            const popup = document.querySelector('.popup-menu');
+            const iconKakao = document.querySelector('.icon_kakao');
 
             if (popup && !popup.contains(event.target) && !iconKakao.contains(event.target)) {
-                this.showPopup = false;
-                this.removeListeners();
+                showPopup.value = false;
+                removeListeners();
             }
-        },
-        removeListeners() {
-            document.removeEventListener('click', this.handleOutsideClick);
-            window.removeEventListener('beforeunload', this.closePopup);
-        },
-        closePopup() {
-            this.showPopup = false;
-        },
-        logout() {
-            console.log('User logged out.');
-            this.showPopup = false;
-            this.removeListeners();
-        },
-    },
-    beforeRouteLeave(to, from, next) {
-        if (this.showPopup) {
-            this.showPopup = false;
-            this.removeListeners();
-        }
-        next();
+        };
+
+        const removeListeners = () => {
+            document.removeEventListener('click', handleOutsideClick);
+            window.removeEventListener('beforeunload', closePopup);
+        };
+
+        const closePopup = () => {
+            showPopup.value = false;
+        };
+
+        const logout = () => {
+            memberStore.clearStore();
+            showPopup.value = false;
+            removeListeners();
+            window.location.reload();
+        };
+
+        const goToMain = () => {
+            showPopup.value = false;
+            removeListeners();
+            router.push('/'); // router.push('/')로 메인 페이지로 이동
+        };
+
+        return {
+            isLoggedIn,
+            userRole,
+            userNickname,
+            userRoleText,
+            showPopup,
+            togglePopup,
+            logout,
+            goToMain,
+        };
     },
 };
 </script>
