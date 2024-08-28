@@ -1,134 +1,85 @@
 <template>
     <div class="header">
         <h2 class="title_header" @click="goToMain">Kapsule</h2>
-        <img class="icon_kakao" src="@/assets/icon_kakao.png" alt="KakaoTalk Icon" @click="togglePopup" />
+        <img class="icon_kakao" src="@/assets/icon_kakao.png" alt="KakaoTalk Icon" @click="handleKakaoIconClick" />
 
         <!-- 팝업 메뉴 -->
         <div v-if="showPopup" class="popup-menu">
-            <p class="user-name">{{ userNickname }}</p>
+            <p class="user-name">{{ memberStore.member?.nickname }}</p>
             <p class="user-role">{{ userRoleText }}</p>
             <button class="logout-button" @click="logout">로그아웃</button>
         </div>
     </div>
 </template>
 
-<script>
-import { ref, computed } from 'vue';
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { useMemberStore } from '@/stores/memberStore';
+import { storeToRefs } from 'pinia';
 
-export default {
-    name: 'HeaderCompo',
-    setup() {
-        const memberStore = useMemberStore();
-        const router = useRouter(); // Vue Router에 접근하기 위해 useRouter를 사용합니다.
+const router = useRouter();
+const memberStore = useMemberStore();
+const { isLoggedIn, member } = storeToRefs(memberStore);
 
-        const isLoggedIn = computed(() => memberStore.isLoggedIn);
-        const userRole = ref('');
-        const userNickname = ref('');
-        const userRoleText = computed(() => {
-            switch (userRole.value) {
-                case 'ROLE_ADMIN':
-                    return '관리자';
-                case 'ROLE_FREEUSER':
-                    return '일반회원';
-                case 'ROLE_PAIDUSER':
-                    return '구독회원';
-                default:
-                    return ''; // 기본값
-            }
-        });
+const showPopup = ref(false);
 
-        // `ref`를 사용하여 `showPopup` 상태를 반응형으로 관리
-        const showPopup = ref(false);
+const userRoleText = computed(() => {
+    switch (member.value?.role) {
+        case 'ROLE_ADMIN':
+            return '관리자';
+        case 'ROLE_FREEUSER':
+            return '일반회원';
+        case 'ROLE_PAIDUSER':
+            return '구독회원';
+        default:
+            return '';
+    }
+});
 
-        const fetchUserInfo = async () => {
-            try {
-                const token = localStorage.getItem('jwtToken');
-                if (!token) {
-                    console.warn('No JWT token found');
-                    return;
-                }
-
-                const response = await axios.get('http://localhost:8088/api/v1/member-info', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                const userData = response.data;
-
-                console.log(userData);
-
-                userNickname.value = userData.nickname;
-                userRole.value = userData.role;
-            } catch (error) {
-                console.error('Failed to fetch user info:', error);
-            }
-        };
-
-        const togglePopup = () => {
-            if (!isLoggedIn.value) {
-                window.location.href = 'http://localhost:8088/api/v1/auth/oauth2/kakao';
-                return;
-            }
-
-            showPopup.value = !showPopup.value;
-
-            if (showPopup.value) {
-                fetchUserInfo(); // 팝업이 열릴 때 사용자 정보를 가져옴
-                document.addEventListener('click', handleOutsideClick);
-                window.addEventListener('beforeunload', closePopup);
-            } else {
-                removeListeners();
-            }
-        };
-
-        const handleOutsideClick = (event) => {
-            const popup = document.querySelector('.popup-menu');
-            const iconKakao = document.querySelector('.icon_kakao');
-
-            if (popup && !popup.contains(event.target) && !iconKakao.contains(event.target)) {
-                showPopup.value = false;
-                removeListeners();
-            }
-        };
-
-        const removeListeners = () => {
-            document.removeEventListener('click', handleOutsideClick);
-            window.removeEventListener('beforeunload', closePopup);
-        };
-
-        const closePopup = () => {
-            showPopup.value = false;
-        };
-
-        const logout = () => {
-            memberStore.clearStore();
-            showPopup.value = false;
-            removeListeners();
-            window.location.reload();
-        };
-
-        const goToMain = () => {
-            showPopup.value = false;
-            removeListeners();
-            router.push('/'); // router.push('/')로 메인 페이지로 이동
-        };
-
-        return {
-            isLoggedIn,
-            userRole,
-            userNickname,
-            userRoleText,
-            showPopup,
-            togglePopup,
-            logout,
-            goToMain,
-        };
-    },
+const handleKakaoIconClick = async () => {
+    if (!isLoggedIn.value) {
+        memberStore.redirectToKakaoLogin();
+    } else {
+        togglePopup();
+    }
 };
+
+const togglePopup = async () => {
+    if (!showPopup.value) {
+        await memberStore.fetchMemberData();
+    }
+    showPopup.value = !showPopup.value;
+};
+
+const handleOutsideClick = (event) => {
+    const popup = document.querySelector('.popup-menu');
+    const iconKakao = document.querySelector('.icon_kakao');
+
+    if (showPopup.value && popup && !popup.contains(event.target) && !iconKakao.contains(event.target)) {
+        showPopup.value = false;
+    }
+};
+
+const logout = () => {
+    memberStore.logout();
+    showPopup.value = false;
+    router.push('/'); // 로그아웃 후 메인 페이지로 리다이렉트
+};
+
+const goToMain = () => {
+    showPopup.value = false;
+    router.push('/');
+};
+
+onMounted(async () => {
+    document.addEventListener('click', handleOutsideClick);
+    await memberStore.checkAuth(); // 컴포넌트 마운트 시 인증 상태 확인
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleOutsideClick);
+});
 </script>
 
 <style scoped>
