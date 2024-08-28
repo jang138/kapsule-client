@@ -48,7 +48,7 @@ const routes = [
                 component: OAuthCompo,
             },
             {
-                path: 'capsule/:lat/:lng',
+                path: '/capsule/:id',
                 component: PageCapsuleDetail,
                 name: 'CapsuleDetail',
                 props: true,

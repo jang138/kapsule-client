@@ -5,44 +5,39 @@
         </div>
 
         <div class="location-info" v-if="address">
-            <p v-if="landmarkData">랜드마크 위치 : {{ address }}</p>
-            <p v-else-if="capsuleData">타임캡슐 위치 : {{ address }}</p>
+            <p v-if="capsuleType === 2">랜드마크 위치 : {{ address }}</p>
+            <p v-else-if="capsuleType === 1">타임캡슐 위치 : {{ address }}</p>
         </div>
 
         <div class="time-capsule-form-group">
             <!-- 타이틀 -->
             <div class="form-group">
-                <p v-if="landmarkData" class="capsule-title">{{ landmarkData.title }}</p>
-                <p v-else-if="capsuleData" class="capsule-title">{{ capsuleData.title }}</p>
+                <p v-if="capsuleType === 2" class="capsule-title">{{ landmarkData?.title }}</p>
+                <p v-else-if="capsuleType === 1" class="capsule-title">{{ capsuleData?.title }}</p>
             </div>
 
             <!-- 기간 또는 운영시간 -->
             <div class="form-group">
-                <div v-if="landmarkData" class="info-box">
+                <div v-if="capsuleType === 2" class="info-box">
                     <div class="info-icon">🕒</div>
-                    <div class="info-text">운영시간 : {{ landmarkData.daterange }}</div>
+                    <div class="info-text">운영시간 : {{ landmarkData?.unlockDate }}</div>
                 </div>
-                <div v-else-if="capsuleData" class="info-box">
+                <div v-else-if="capsuleType === 1" class="info-box">
                     <div class="info-icon">📅</div>
-                    <div class="info-text">타임캡슐 기간 : {{ capsuleData.dateRange }}</div>
+                    <div class="info-text">타임캡슐 기간 : {{ capsuleData?.unlockDate }}</div>
                 </div>
             </div>
 
             <!-- 내용 -->
             <div class="form-group">
-                <div v-if="landmarkData" class="capsule-content" v-html="landmarkData.description"></div>
-                <div v-else-if="capsuleData" class="capsule-content">타임캡슐 내용</div>
+                <div v-if="capsuleType === 2" class="capsule-content" v-html="landmarkData?.content"></div>
+                <div v-else-if="capsuleType === 1" class="capsule-content" v-html="capsuleData?.content"></div>
             </div>
 
             <!-- 이미지 섹션 -->
             <div class="form-group">
-                <div class="image-grid" v-if="landmarkData || capsuleData">
-                    <div
-                        class="image-box"
-                        v-for="(image, index) in imageList"
-                        :key="index"
-                        :style="getImageBoxStyle(imageList.length)"
-                    >
+                <div class="image-grid" v-if="imageList.length > 0">
+                    <div class="image-box" v-for="(image, index) in imageList" :key="index">
                         <img :src="image" :alt="`Image ${index + 1}`" />
                     </div>
                 </div>
@@ -52,44 +47,26 @@
 </template>
 
 <script setup>
-import { useLandmarkStore } from '@/stores/landmark-store';
-import { useTimelineStore } from '@/stores/timelineStore';
+import axios from '@/axios';
+import { useMemberStore } from '@/stores/memberStore';
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const lat = ref(parseFloat(route.params.lat));
-const lng = ref(parseFloat(route.params.lng));
+const id = ref(route.params.id);
 const address = ref('');
-
 const mapContainer = ref(null);
 const mapInstance = ref(null);
-
-const timelineStore = useTimelineStore();
-const landmarkStore = useLandmarkStore();
-
-const landmarkData = landmarkStore.landmarks.find(
-    (landmark) => landmark.coordinates.lat === lat.value && landmark.coordinates.lng === lng.value,
-);
-
-const capsuleData = !landmarkData
-    ? timelineStore.timelineItems.find(
-          (item) => item.coordinates.lat === lat.value && item.coordinates.lng === lng.value,
-      )
-    : null;
+const capsuleData = ref(null);
+const landmarkData = ref(null);
+const lat = ref(null);
+const lng = ref(null);
+const capsuleType = ref(null);
 
 // 이미지 목록
-const imageList = ref(
-    landmarkData ? (Array.isArray(landmarkData.image) ? landmarkData.image : [landmarkData.image]) : [],
-);
+const imageList = ref([]);
 
-const setMapCenter = () => {
-    if (mapInstance.value) {
-        const center = new window.kakao.maps.LatLng(lat.value, lng.value);
-        mapInstance.value.setCenter(center);
-    }
-};
-
+// 지도 로딩 및 설정
 const loadKakaoMap = (container) => {
     const script = document.createElement('script');
     script.src =
@@ -104,8 +81,6 @@ const loadKakaoMap = (container) => {
             };
 
             mapInstance.value = new window.kakao.maps.Map(container, options);
-
-            mapInstance.value.setDraggable(false);
 
             new window.kakao.maps.Marker({
                 position: new window.kakao.maps.LatLng(lat.value, lng.value),
@@ -124,27 +99,48 @@ const loadKakaoMap = (container) => {
                 }
             });
 
-            window.addEventListener('resize', setMapCenter);
+            window.addEventListener('resize', () => {
+                mapInstance.value.setCenter(new window.kakao.maps.LatLng(lat.value, lng.value));
+            });
         });
     };
 };
 
-const getImageBoxStyle = (imageCount) => {
-    switch (imageCount) {
-        case 1:
-            return { width: '100%' };
-        case 2:
-            return { width: '45%' };
-        case 3:
-            return { width: '30%' };
-        default:
-            return { width: '30%' };
+const memberStore = useMemberStore();
+
+// API 요청 시 토큰을 헤더에 포함
+const fetchCapsuleData = async () => {
+    try {
+        const response = await axios.get(`/capsule/${id.value}`, {
+            headers: {
+                Authorization: `Bearer ${memberStore.token}`,
+            },
+            withCredentials: true,
+        });
+
+        const data = response.data;
+
+        // 데이터 설정
+        capsuleType.value = data.capsuleType;
+        lat.value = data.latitude;
+        lng.value = data.longitude;
+        imageList.value = data.images || [];
+
+        if (capsuleType.value === 2) {
+            landmarkData.value = data;
+        } else if (capsuleType.value === 1) {
+            capsuleData.value = data;
+        }
+
+        loadKakaoMap(mapContainer.value);
+    } catch (error) {
+        console.error('타임캡슐 데이터 가져오기 오류:', error);
     }
 };
 
 onMounted(() => {
-    loadKakaoMap(mapContainer.value);
-    landmarkStore.fetchLandmarks();
+    memberStore.initializeStore();
+    fetchCapsuleData();
 });
 </script>
 
