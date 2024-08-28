@@ -2,7 +2,7 @@ const { defineConfig } = require('@vue/cli-service');
 module.exports = defineConfig({
     transpileDependencies: true,
     devServer: {
-        https: true,
+        https: true, // HTTPS 사용
         proxy: {
             '/api': {
                 target: 'http://localhost:8088', // Spring Boot 서버의 기본 URL
@@ -13,3 +13,4 @@ module.exports = defineConfig({
         },
     },
 });
+0;

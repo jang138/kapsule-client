@@ -6,6 +6,7 @@ import PageMain from '@/components/pages/PageMain.vue';
 import PageNotFound from '@/components/pages/PageNotFound.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
 import LandmarkAdd from '@/components/pages/LandmarkAdd.vue';
+import OAuthCompo from '@/components/pages/OAuthCompo.vue';
 
 const routes = [
     {
@@ -50,6 +51,11 @@ const routes = [
                 path: 'add-landmark',
                 name: 'LandmarkAdd',
                 component: LandmarkAdd, // 새롭게 추가된 페이지 경로
+            },
+            {
+                path: '/auth/oauth-response/:token/:expirationTime',
+                name: 'OAuth',
+                component: OAuthCompo,
             },
         ],
     },
