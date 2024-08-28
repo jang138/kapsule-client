@@ -14,15 +14,35 @@
             </div>
 
             <div class="input-group">
+                <!-- 일반 사용자일 경우 보이는 부분 -->
                 <textarea
+                    v-if="!isAdmin"
                     class="capsule-content"
                     v-model="content"
                     :class="{ error: isContentLimitExceeded }"
                     placeholder="타임캡슐에 추가할 내용을 작성하세요"
                     rows="10"
                 ></textarea>
-                <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
+                <div v-if="!isAdmin" id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
                     {{ content.length }}/500
+                </div>
+
+                <!-- 관리자일 경우 보이는 부분 -->
+                <div v-if="isAdmin">
+                    <div>
+                        <label for="daterange">운영시간:</label>
+                        <textarea class="capsule-content" id="daterange" v-model="content" required rows="2"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="subtitle">소제목:</label>
+                        <textarea class="capsule-content" id="subtitle" v-model="content" required rows="2"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="text">본문:</label>
+                        <textarea class="capsule-content" id="text" v-model="content" required rows="2"></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -86,7 +106,9 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useMemberStore } from '@/stores/memberStore';
 
+const memberStore = useMemberStore();
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
@@ -108,6 +130,9 @@ const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
 const isContentLimitExceeded = computed(() => hasExceededLimit.value);
+
+// 관리자인지 확인
+const isAdmin = computed(() => memberStore.member && memberStore.member.role === 'ROLE_ADMIN');
 
 watch(content, (newValue) => {
     if (newValue.length > contentLimit) {

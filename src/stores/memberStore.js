@@ -9,6 +9,13 @@ export const useMemberStore = defineStore('memberStore', {
         isInitialized: false, // 초기화 여부 상태 추가
     }),
 
+    getters: {
+        isAdmin(state) {
+            // member가 존재하고 그 member의 role이 'ADMIN'인 경우에만 true 반환
+            return state.member?.role === 'ADMIN';
+        },
+    },
+
     actions: {
         initializeStore() {
             if (this.isInitialized) return; // 이미 초기화되었으면 아무것도 하지 않음
