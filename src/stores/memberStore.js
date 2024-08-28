@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL = 'http://localhost:8088';
 
@@ -7,6 +8,7 @@ export const useMemberStore = defineStore('memberStore', {
     state: () => ({
         token: null,
         member: null,
+        imageUrl: null,
         isLoggedIn: false,
     }),
 
@@ -18,7 +20,7 @@ export const useMemberStore = defineStore('memberStore', {
         async checkAuth() {
             const token = localStorage.getItem('jwtToken');
             if (token) {
-                this.token = token;
+                this.setToken(token);
                 this.isLoggedIn = true;
                 await this.fetchMemberData();
             }
@@ -34,9 +36,23 @@ export const useMemberStore = defineStore('memberStore', {
             this.isLoggedIn = true;
         },
 
-        setToken(token) {
-            this.token = token;
-            localStorage.setItem('jwtToken', token);
+        async setToken(token) {
+            this.token = token; // 토큰 설정
+            localStorage.setItem('jwtToken', token); // 로컬 스토리지에 토큰 저장
+            this.decodeImageUrlFromToken(token); // 이미지 URL 디코딩
+            this.isLoggedIn = true; // 로그인 상태 설정
+            await this.fetchMemberData(); // 회원 데이터 가져오기
+        },
+
+        decodeImageUrlFromToken(token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                this.imageUrl = decodedToken.profileImage;
+                console.log('Decoded imageUrl from token:', this.imageUrl);
+            } catch (error) {
+                console.error('Error decoding token:', error);
+                this.imageUrl = null;
+            }
         },
 
         async fetchMemberData() {
@@ -45,16 +61,17 @@ export const useMemberStore = defineStore('memberStore', {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
                 this.member = response.data;
+                this.decodeImageUrlFromToken(this.token);
             } catch (error) {
                 console.error('Failed to fetch member data:', error);
                 this.clearAuthentication();
-                throw error;
             }
         },
 
         clearAuthentication() {
             this.token = null;
             this.member = null;
+            this.imageUrl = null;
             this.isLoggedIn = false;
             localStorage.removeItem('jwtToken');
         },
@@ -69,6 +86,13 @@ export const useMemberStore = defineStore('memberStore', {
             } else {
                 console.log('User is already logged in');
             }
+        },
+
+        async loginAndFetchUserData(token) {
+            this.setToken(token);
+            this.isLoggedIn = true;
+            await this.fetchMemberData();
+            return this.imageUrl;
         },
     },
 });
