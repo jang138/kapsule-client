@@ -5,7 +5,7 @@
             <button class="refresh-location-btn" @click="refreshUserLocation">🔄</button>
         </div>
         <div class="location-info" v-if="address">
-            <p>현재 위치 : {{ address }}</p>
+            <p>{{ userRole === 'ROLE_ADMIN' ? '선택한 위치' : '현재 위치' }} : {{ address }}</p>
         </div>
 
         <div class="time-capsule-form-group">
@@ -107,6 +107,30 @@ const customDate = ref('');
 const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
+const userRole = ref('');
+const kakaoId = ref('');
+
+// JWT 토큰 디코딩 함수
+const decodeJWT = (token) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(''),
+        );
+
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        return null;
+    }
+};
+
 const isContentLimitExceeded = computed(() => hasExceededLimit.value);
 
 watch(content, (newValue) => {
@@ -121,6 +145,18 @@ watch(content, (newValue) => {
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
+
+    // JWT 토큰에서 role과 kakaoId 추출
+    const jwtToken = localStorage.getItem('jwtToken');
+    if (jwtToken) {
+        const decodedToken = decodeJWT(jwtToken);
+        if (decodedToken) {
+            userRole.value = decodedToken.role;
+            kakaoId.value = decodedToken.sub;
+            console.log('User Role:', userRole.value);
+            console.log('Kakao ID:', kakaoId.value);
+        }
+    }
 });
 
 onBeforeUnmount(() => {
@@ -141,9 +177,44 @@ const loadKakaoMap = (container) => {
 
             mapInstance.value = new window.kakao.maps.Map(container, options);
 
+            if (userRole.value === 'ROLE_ADMIN') {
+                // 관리자용 지도 클릭 이벤트 추가
+                window.kakao.maps.event.addListener(mapInstance.value, 'click', function (mouseEvent) {
+                    const latlng = mouseEvent.latLng;
+                    updateMarkerPosition(latlng.getLat(), latlng.getLng());
+                });
+            }
+
             refreshUserLocation();
         });
     };
+};
+
+const updateMarkerPosition = (lat, lng) => {
+    const newPosition = new window.kakao.maps.LatLng(lat, lng);
+
+    if (marker.value) {
+        marker.value.setPosition(newPosition);
+    } else {
+        marker.value = new window.kakao.maps.Marker({
+            position: newPosition,
+            map: mapInstance.value,
+        });
+    }
+
+    mapInstance.value.setCenter(newPosition);
+    updateAddressFromCoords(lat, lng);
+};
+
+const updateAddressFromCoords = (lat, lng) => {
+    const geocoder = new window.kakao.maps.services.Geocoder();
+    geocoder.coord2Address(lng, lat, (result, status) => {
+        if (status === window.kakao.maps.services.Status.OK) {
+            address.value = result[0].address.address_name;
+        } else {
+            address.value = 'Failed to convert address.';
+        }
+    });
 };
 
 const handleResize = () => {
@@ -158,29 +229,7 @@ const refreshUserLocation = () => {
             (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
-                userLocation.value = new window.kakao.maps.LatLng(lat, lng);
-                mapInstance.value.setCenter(userLocation.value);
-                mapInstance.value.setLevel(2);
-
-                if (marker.value) {
-                    marker.value.setMap(null);
-                }
-
-                marker.value = new window.kakao.maps.Marker({
-                    position: userLocation.value,
-                    map: mapInstance.value,
-                    title: '사용자의 위치',
-                    draggable: false,
-                });
-
-                const geocoder = new window.kakao.maps.services.Geocoder();
-                geocoder.coord2Address(lng, lat, (result, status) => {
-                    if (status === window.kakao.maps.services.Status.OK) {
-                        address.value = result[0].address.address_name;
-                    } else {
-                        address.value = 'Failed to convert address.';
-                    }
-                });
+                updateMarkerPosition(lat, lng);
             },
             (error) => {
                 console.error('Error getting user location: ', error);
@@ -192,11 +241,20 @@ const refreshUserLocation = () => {
 };
 
 const createTimeCapsule = () => {
-    console.log('타임캡슐 타이틀 : ', title.value);
-    console.log('타임캡슐 내용 : ', content.value);
-    console.log('타임캡슐 사진 : ', images.value);
-    console.log('타임캡슐 개봉일 : ', openingDate.value);
-    console.log('타임캡슐 비공개 :', isPrivate.value);
+    const capsuleData = {
+        title: title.value,
+        content: content.value,
+        images: images.value.filter((img) => img !== null),
+        openingDate: openingDate.value === '직접 설정' ? customDate.value : openingDate.value,
+        isPrivate: isPrivate.value,
+        latitude: marker.value ? marker.value.getPosition().getLat() : null,
+        longitude: marker.value ? marker.value.getPosition().getLng() : null,
+        address: address.value,
+        kakaoId: kakaoId.value,
+    };
+
+    console.log('타임캡슐 데이터:', capsuleData);
+    // 여기에 서버로 데이터를 보내는 로직을 추가하세요.
 };
 
 // 이미지를 선택하는 함수

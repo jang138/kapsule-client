@@ -165,7 +165,24 @@ const closePopup = () => {
 
 const submitCapsuleCode = async (code) => {
     try {
-        const kakaoId = '3682620015'; // 실제 사용자의 kakaoId로 교체해야 합니다
+        const jwtToken = localStorage.getItem('jwtToken');
+        console.log('JWT !!!!!!!!!! :', jwtToken);
+        if (!jwtToken) {
+            console.error('No JWT token found in localStorage');
+            popupErrorMessage.value = '인증 정보를 찾을 수 없습니다. 다시 로그인해 주세요.';
+            return;
+        }
+
+        const decodedToken = decodeJWT(jwtToken);
+        if (!decodedToken || !decodedToken.sub) {
+            console.error('Failed to decode JWT token or sub (kakaoId) not found');
+            popupErrorMessage.value = '사용자 정보를 확인할 수 없습니다. 다시 로그인해 주세요.';
+            return;
+        }
+
+        const kakaoId = decodedToken.sub;
+        console.log('Using kakaoId for adding shared capsule:', kakaoId);
+
         const result = await store.addSharedCapsule(code, kakaoId);
         if (result.success) {
             closePopup();
