@@ -88,6 +88,22 @@ export const useTimelineStore = defineStore('timeline', {
             }
         },
 
+        async deleteSharedCapsule(sharedCapsuleId) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const token = localStorage.getItem('jwtToken');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.delete(`${API_BASE_URL}/key/${sharedCapsuleId}`, { headers });
+                this.sharedCapsules = this.sharedCapsules.filter((capsule) => capsule.id !== sharedCapsuleId);
+            } catch (error) {
+                this.handleError(error, 'Error deleting shared capsule');
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
         async updateCapsule(capsuleId, updatedData) {
             this.loading = true;
             this.error = null;

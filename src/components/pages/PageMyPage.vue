@@ -15,6 +15,20 @@
                 <h2>내 캡슐</h2>
                 <div class="timeline-items">
                     <div v-for="capsule in filteredMyCapsules" :key="capsule.id" class="timeline-item">
+                        <button class="delete-button" @click.stop="deleteMyCapsule(capsule.id)">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                id="Layer_1"
+                                data-name="Layer 1"
+                                viewBox="0 0 24 24"
+                                width="15"
+                                height="15"
+                            >
+                                <path
+                                    d="M12.649,12L21.886,.818c.176-.213,.146-.528-.067-.704-.211-.176-.526-.147-.704,.067L12,11.215,2.886,.182c-.178-.215-.493-.243-.704-.067-.213,.176-.243,.491-.067,.704L11.351,12,2.114,23.182c-.176,.213-.146,.528,.067,.704,.212,.175,.527,.147,.704-.067L12,12.785l9.114,11.033c.177,.214,.493,.242,.704,.067,.213-.176,.243-.491,.067-.704L12.649,12Z"
+                                />
+                            </svg>
+                        </button>
                         <div class="item-content" @click="navigateToMain(capsule)">
                             <h3>{{ capsule.title }}</h3>
                             <p>열람 가능 날짜: {{ capsule.unlockDate }}</p>
@@ -39,12 +53,21 @@
                 <h2>공유 캡슐</h2>
                 <div class="timeline-items">
                     <div v-for="item in filteredSharedCapsules" :key="item.id" class="timeline-item">
+                        <button class="delete-button" @click.stop="deleteSharedCapsule(item.id)">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                id="Layer_1"
+                                data-name="Layer 1"
+                                viewBox="0 0 24 24"
+                                width="15"
+                                height="15"
+                            >
+                                <path
+                                    d="M12.649,12L21.886,.818c.176-.213,.146-.528-.067-.704-.211-.176-.526-.147-.704,.067L12,11.215,2.886,.182c-.178-.215-.493-.243-.704-.067-.213,.176-.243,.491-.067,.704L11.351,12,2.114,23.182c-.176,.213-.146,.528,.067,.704,.212,.175,.527,.147,.704-.067L12,12.785l9.114,11.033c.177,.214,.493,.242,.704,.067,.213-.176,.243-.491,.067-.704L12.649,12Z"
+                                />
+                            </svg>
+                        </button>
                         <div class="item-content" @click="navigateToMain(item)">
-                            <h3>{{ item.title }}</h3>
-                            <p>{{ item.unlockDate }}</p>
-                            <p>{{ item.address }}</p>
-                        </div>
-                        <div class="item-arrow" @click="navigateToMain(item)">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                                 <path d="M10 17l5-5-5-5v10z" fill="currentColor" />
                             </svg>
@@ -196,6 +219,28 @@ const submitCapsuleCode = async (code) => {
         popupErrorMessage.value = '캡슐 추가 중 오류가 발생했습니다. 다시 시도해주세요.';
     }
 };
+
+const deleteMyCapsule = async (capsuleId) => {
+    if (confirm('정말로 이 캡슐을 삭제하시겠습니까?')) {
+        try {
+            await store.deleteCapsule(capsuleId);
+            console.log('캡슐이 성공적으로 삭제되었습니다.');
+        } catch (error) {
+            console.error('캡슐 삭제 중 오류 발생:', error);
+        }
+    }
+};
+
+const deleteSharedCapsule = async (capsuleId) => {
+    if (confirm('정말로 이 공유 캡슐을 삭제하시겠습니까?')) {
+        try {
+            await store.deleteSharedCapsule(capsuleId);
+            console.log('공유 캡슐이 성공적으로 삭제되었습니다.');
+        } catch (error) {
+            console.error('공유 캡슐 삭제 중 오류 발생:', error);
+        }
+    }
+};
 </script>
 
 <style scoped>
@@ -236,10 +281,10 @@ const submitCapsuleCode = async (code) => {
     display: flex;
     justify-content: space-between;
     gap: 20px;
-}
 
-.timeline-itemContainer h2 {
-    text-align: center;
+    h2 {
+        text-align: center;
+    }
 }
 
 .timeline-section {
@@ -256,6 +301,7 @@ const submitCapsuleCode = async (code) => {
     gap: 10px;
 }
 .timeline-item {
+    position: relative;
     background-color: #f0f0f0;
     border-radius: 4px;
     padding: 15px;
@@ -277,5 +323,17 @@ const submitCapsuleCode = async (code) => {
 
 .item-arrow {
     color: #007bff;
+}
+
+.delete-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: transparent;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 1;
 }
 </style>
