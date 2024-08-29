@@ -236,10 +236,10 @@ const submitCapsuleCode = async (code) => {
     display: flex;
     justify-content: space-between;
     gap: 20px;
+}
 
-    h2 {
-        text-align: center;
-    }
+.timeline-itemContainer h2 {
+    text-align: center;
 }
 
 .timeline-section {

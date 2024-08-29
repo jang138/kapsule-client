@@ -9,7 +9,6 @@
                     style="width: 20px; height: 20px; margin: auto 5px"
                 />
                 <input type="text" placeholder="검색..." v-model="searchQuery" />
-                <!-- <button class="search-button">검색</button> -->
                 <button class="search-option" @click="toggleOptions">
                     지역
                     <span style="font-size: 10px">▼</span>
@@ -34,12 +33,32 @@
                         <img :src="landmark.image" alt="Landmark Photo" />
                     </div>
                     <div class="landmark-info">
-                        <h3>{{ landmark.title }}</h3>
-                        <p><strong>운영시간</strong><br /><span v-html="landmark.daterange"></span></p>
+                        <!-- content가 파싱된 경우에만 subtitle과 daterange 표시 -->
+                        <h3>
+                            {{ landmark.title }}
+                        </h3>
+                        <p v-if="landmark.content && typeof landmark.content === 'object'">
+                            <strong>운영시간</strong> {{ landmark.content.daterange }}
+                        </p>
                         <p>{{ landmark.location }}</p>
                     </div>
                     <div class="landmark-action">
-                        <button class="send-button">
+                        <button v-if="isAdmin" class="delete-button" @click.stop="deleteLandmark(landmark.id)">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                id="Layer_1"
+                                data-name="Layer 1"
+                                viewBox="0 0 24 24"
+                                width="15"
+                                height="15"
+                            >
+                                <path
+                                    d="M12.649,12L21.886,.818c.176-.213,.146-.528-.067-.704-.211-.176-.526-.147-.704,.067L12,11.215,2.886,.182c-.178-.215-.493-.243-.704-.067-.213,.176-.243,.491-.067,.704L11.351,12,2.114,23.182c-.176,.213-.146,.528,.067,.704,.212,.175,.527,.147,.704-.067L12,12.785l9.114,11.033c.177,.214,.493,.242,.704,.067,.213-.176,.243-.491,.067-.704L12.649,12Z"
+                                />
+                            </svg>
+                        </button>
+
+                        <button class="send-button" @click="handleClick(landmark)">
                             <svg
                                 width="20"
                                 height="20"
@@ -77,59 +96,59 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { useLandmarkStore } from '@/stores/landmark-store';
 import { computed, ref, onMounted } from 'vue'; // onMounted 훅 추가
 import { useRouter } from 'vue-router';
 
-export default {
-    setup() {
-        const store = useLandmarkStore();
-        const router = useRouter();
+// 스토어 및 라우터 초기화
+const store = useLandmarkStore();
+const router = useRouter();
 
-        // 검색 및 필터링과 관련된 상태 관리
-        const searchQuery = ref(''); // 사용자 입력을 저장하는 ref 변수
-        const selectedRegions = ref([]);
-        const showOptions = ref(false);
+// 관리자인지 확인
+const isAdmin = computed(() => store.isAdmin);
 
-        // Computed properties
-        const availableRegions = computed(() => store.availableRegions);
-        const filteredLandmarks = computed(() => {
-            return store
-                .filteredLandmarks(searchQuery.value, selectedRegions.value)
-                .filter((landmark) => landmark['capsule-type'] === 2); // capsule-type이 2인 것만 필터링
-        });
+// 검색 및 필터링과 관련된 상태 관리
+const searchQuery = ref(''); // 사용자 입력을 저장하는 ref 변수
+const selectedRegions = ref([]);
+const showOptions = ref(false);
 
-        // Methods
-        const handleClick = (landmark) => {
-            console.log(`Clicked on ${landmark.title}`);
-            router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
-        };
+// Computed properties
+const availableRegions = computed(() => store.availableRegions);
+const filteredLandmarks = computed(() => {
+    return store
+        .filteredLandmarks(searchQuery.value, selectedRegions.value)
+        .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
+});
 
-        const toggleOptions = () => {
-            showOptions.value = !showOptions.value;
-        };
-
-        // 데이터 불러오기
-        onMounted(async () => {
-            try {
-                await store.fetchLandmarks(); // 데이터를 불러옴
-            } catch (error) {
-                console.error('Failed to fetch landmarks:', error);
-            }
-        });
-
-        return {
-            searchQuery,
-            selectedRegions,
-            showOptions,
-            availableRegions,
-            filteredLandmarks,
-            handleClick,
-            toggleOptions,
-        };
-    },
+// Methods
+const handleClick = (landmark) => {
+    console.log(`Clicked on ${landmark.title}`);
+    router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
 };
+
+const toggleOptions = () => {
+    showOptions.value = !showOptions.value;
+};
+
+const deleteLandmark = async (landmarkId) => {
+    try {
+        await store.deleteLandmark(landmarkId);
+        alert('랜드마크가 삭제되었습니다.');
+    } catch (error) {
+        console.error('Failed to delete landmark:', error);
+        alert('랜드마크 삭제 중 오류가 발생했습니다.');
+    }
+};
+
+// 데이터 불러오기
+onMounted(async () => {
+    try {
+        await store.fetchLandmarks(); // 데이터를 불러옴
+    } catch (error) {
+        console.error('Failed to fetch landmarks:', error);
+    }
+});
 </script>
 
 <style scoped>
@@ -219,6 +238,7 @@ export default {
     padding: 10px;
     border-radius: 8px;
     display: flex;
+    position: relative; /* 상대 위치 지정 */
     align-items: center;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -242,6 +262,15 @@ export default {
 }
 
 .send-button {
+    background-color: transparent;
+    border: none;
+    color: black;
+}
+
+.delete-button {
+    position: absolute; /* 절대 위치 지정 */
+    top: 10px; /* 상단에 위치 */
+    right: 5px; /* 오른쪽에 위치 */
     background-color: transparent;
     border: none;
     color: black;
