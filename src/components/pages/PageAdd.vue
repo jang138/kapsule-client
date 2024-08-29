@@ -53,28 +53,22 @@
                 <div class="opening-date-box">
                     <p class="box-title">타임캡슐 개봉일 설정</p>
                     <div class="radio-group">
-                        <label><input type="radio" v-model="openingDate" value="5일 뒤" /> 5일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="10일 뒤" /> 10일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="30일 뒤" /> 30일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="5" /> 5일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="10" /> 10일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="30" /> 30일 뒤</label>
                         <label class="direct-setting">
-                            <input type="radio" v-model="openingDate" value="직접 설정" /> 직접 설정
+                            <input type="radio" v-model="selectedDateOpt" value="customizing" /> 직접 설정
                             <input
-                                v-if="openingDate === '직접 설정'"
+                                v-if="selectedDateOpt === 'customizing'"
                                 type="date"
                                 v-model="customDate"
+                                :min="minDate"
+                                :max="maxDate"
                                 @change="updateCustomDate"
                             />
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <!-- 비공개 여부 설정 -->
-            <div class="form-group private-setting-group">
-                <label for="isPrivate">
-                    타임캡슐 비공개
-                    <input type="checkbox" id="isPrivate" v-model="isPrivate" />
-                </label>
             </div>
 
             <div class="button-wrapper">
@@ -85,6 +79,8 @@
 </template>
 
 <script setup>
+import axios from 'axios';
+import router from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const mapContainer = ref(null);
@@ -99,16 +95,40 @@ const content = ref('');
 const images = ref([null, null, null]); // 이미지가 들어갈 배열 (3개)
 const selectedIndex = ref(-1);
 const fileInput = ref(null);
+const selectedLocation = ref(null);
 
-const openingDate = ref('');
-const isPrivate = ref(false);
+const selectedDateOpt = ref('');
 const customDate = ref('');
+const unlockDate = ref('');
+
+const today = new Date();
+const minDate = today.toISOString().split('T')[0];
+const maxDate = new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0];
+
+const lat = ref('');
+const lng = ref('');
+
+const kakaoId = ref('');
 
 const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
 const userRole = ref('');
-const kakaoId = ref('');
+const isContentLimitExceeded = computed(() => hasExceededLimit.value);
+
+watch(content, (newValue) => {
+    if (newValue.length > contentLimit) {
+        content.value = newValue.slice(0, contentLimit + 1);
+        hasExceededLimit.value = true;
+    } else {
+        hasExceededLimit.value = false;
+    }
+});
+
+onMounted(() => {
+    loadKakaoMap(mapContainer.value);
+    window.addEventListener('resize', handleResize);
+});
 
 // JWT 토큰 디코딩 함수
 const decodeJWT = (token) => {
@@ -131,21 +151,9 @@ const decodeJWT = (token) => {
     }
 };
 
-const isContentLimitExceeded = computed(() => hasExceededLimit.value);
-
-watch(content, (newValue) => {
-    if (newValue.length > contentLimit) {
-        content.value = newValue.slice(0, contentLimit + 1);
-        hasExceededLimit.value = true;
-    } else {
-        hasExceededLimit.value = false;
-    }
-});
-
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
-
     // JWT 토큰에서 role과 kakaoId 추출
     const jwtToken = localStorage.getItem('jwtToken');
     if (jwtToken) {
@@ -204,6 +212,9 @@ const updateMarkerPosition = (lat, lng) => {
 
     mapInstance.value.setCenter(newPosition);
     updateAddressFromCoords(lat, lng);
+
+    // 선택된 위치 정보 저장
+    selectedLocation.value = { lat, lng };
 };
 
 const updateAddressFromCoords = (lat, lng) => {
@@ -227,9 +238,11 @@ const refreshUserLocation = () => {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                updateMarkerPosition(lat, lng);
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                if (userRole.value !== 'ROLE_ADMIN' || !selectedLocation.value) {
+                    updateMarkerPosition(userLat, userLng);
+                }
             },
             (error) => {
                 console.error('Error getting user location: ', error);
@@ -238,23 +251,6 @@ const refreshUserLocation = () => {
     } else {
         console.error('Geolocation is not supported by this browser.');
     }
-};
-
-const createTimeCapsule = () => {
-    const capsuleData = {
-        title: title.value,
-        content: content.value,
-        images: images.value.filter((img) => img !== null),
-        openingDate: openingDate.value === '직접 설정' ? customDate.value : openingDate.value,
-        isPrivate: isPrivate.value,
-        latitude: marker.value ? marker.value.getPosition().getLat() : null,
-        longitude: marker.value ? marker.value.getPosition().getLng() : null,
-        address: address.value,
-        kakaoId: kakaoId.value,
-    };
-
-    console.log('타임캡슐 데이터:', capsuleData);
-    // 여기에 서버로 데이터를 보내는 로직을 추가하세요.
 };
 
 // 이미지를 선택하는 함수
@@ -284,6 +280,62 @@ const onImageUpload = (event) => {
 // 날짜 선택 함수
 const updateCustomDate = (event) => {
     customDate.value = event.target.value;
+};
+
+watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
+    if (newSelectedDateOpt === 'customizing') {
+        unlockDate.value = newCustomDate;
+        console.log('Updated unlockDate:', unlockDate.value);
+    } else {
+        const checkedOpt = parseInt(newSelectedDateOpt);
+        const calculatedDate = new Date(today);
+        calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
+
+        unlockDate.value = calculatedDate.toISOString().split('T')[0];
+    }
+});
+
+const createTimeCapsule = () => {
+    let capsuleLocation;
+    if (userRole.value === 'ROLE_ADMIN' && selectedLocation.value) {
+        capsuleLocation = selectedLocation.value;
+    } else {
+        capsuleLocation = { lat: lat.value, lng: lng.value };
+    }
+
+    const capsuleData = {
+        title: title.value,
+        content: content.value,
+        unlockDate: unlockDate.value,
+        address: address.value,
+        latitude: capsuleLocation.lat,
+        longitude: capsuleLocation.lng,
+        kakaoId: kakaoId.value,
+    };
+
+    const token = localStorage.getItem('jwtToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    axios
+        .post('http://localhost:8088/capsule/create', capsuleData, {
+            headers,
+            withCredentials: true,
+        })
+        .then((response) => {
+            console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
+            router.push('/');
+        })
+        .catch((error) => {
+            console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
+        });
+
+    console.log('타임캡슐 타이틀 : ', title.value);
+    console.log('타임캡슐 내용 : ', content.value);
+    console.log('타임캡슐 개봉일 : ', unlockDate.value);
+    console.log('타임캡슐 위도 : ', capsuleLocation.lat);
+    console.log('타임캡슐 경도 : ', capsuleLocation.lng);
+    console.log('타임캡슐 주소 : ', address.value);
+    console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
 };
 </script>
 
