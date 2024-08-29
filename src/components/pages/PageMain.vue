@@ -9,7 +9,7 @@
 <script setup>
 import { useTimelineStore } from '@/stores/timelineStore';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const mapContainer = ref(null);
@@ -22,6 +22,8 @@ const store = useTimelineStore();
 const timelineMarkers = ref([]);
 const overlays = ref([]);
 const isUserLocationActive = ref(false);
+
+const router = useRouter();
 
 // JWT 토큰 디코딩 함수
 const decodeJWT = (token) => {
@@ -133,12 +135,12 @@ const updateTimelineMarkers = () => {
 
                     overlays.value.push(overlay);
 
-                    // "자세히 보기" 버튼 클릭 시 URL 이동
+                    // "자세히 보기" 버튼 클릭 시 Vue Router를 사용하여 페이지 이동
                     const overlayBtn = overlay.a.querySelector('.overlay-btn');
                     overlayBtn.addEventListener('click', (event) => {
                         const itemId = event.target.getAttribute('data-id');
                         if (itemId) {
-                            window.location.href = `https://localhost:8080/capsule/${itemId}`;
+                            router.push({ name: 'CapsuleDetail', params: { id: itemId } });
                         }
                     });
                 });
