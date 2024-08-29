@@ -80,7 +80,7 @@
 
 <script setup>
 import axios from 'axios';
-import router  from '@/router';
+import router from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const mapContainer = ref(null);
@@ -95,6 +95,7 @@ const content = ref('');
 const images = ref([null, null, null]); // 이미지가 들어갈 배열 (3개)
 const selectedIndex = ref(-1);
 const fileInput = ref(null);
+const selectedLocation = ref(null);
 
 const selectedDateOpt = ref('');
 const customDate = ref('');
@@ -102,8 +103,7 @@ const unlockDate = ref('');
 
 const today = new Date();
 const minDate = today.toISOString().split('T')[0];
-const maxDate = new Date(today.setFullYear(today.getFullYear() + 1))
-    .toISOString().split('T')[0];
+const maxDate = new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0];
 
 const lat = ref('');
 const lng = ref('');
@@ -212,6 +212,9 @@ const updateMarkerPosition = (lat, lng) => {
 
     mapInstance.value.setCenter(newPosition);
     updateAddressFromCoords(lat, lng);
+
+    // 선택된 위치 정보 저장
+    selectedLocation.value = { lat, lng };
 };
 
 const updateAddressFromCoords = (lat, lng) => {
@@ -235,9 +238,11 @@ const refreshUserLocation = () => {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                lat.value = position.coords.latitude;
-                lng.value = position.coords.longitude;
-                updateMarkerPosition(lat.value, lng.value);
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                if (userRole.value !== 'ROLE_ADMIN' || !selectedLocation.value) {
+                    updateMarkerPosition(userLat, userLng);
+                }
             },
             (error) => {
                 console.error('Error getting user location: ', error);
@@ -279,9 +284,8 @@ const updateCustomDate = (event) => {
 
 watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
     if (newSelectedDateOpt === 'customizing') {
-        unlockDate.value = newCustomDate; 
+        unlockDate.value = newCustomDate;
         console.log('Updated unlockDate:', unlockDate.value);
-
     } else {
         const checkedOpt = parseInt(newSelectedDateOpt);
         const calculatedDate = new Date(today);
@@ -289,16 +293,23 @@ watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
 
         unlockDate.value = calculatedDate.toISOString().split('T')[0];
     }
-})
+});
 
 const createTimeCapsule = () => {
+    let capsuleLocation;
+    if (userRole.value === 'ROLE_ADMIN' && selectedLocation.value) {
+        capsuleLocation = selectedLocation.value;
+    } else {
+        capsuleLocation = { lat: lat.value, lng: lng.value };
+    }
+
     const capsuleData = {
         title: title.value,
         content: content.value,
         unlockDate: unlockDate.value,
         address: address.value,
-        latitude: lat.value,
-        longitude: lng.value,
+        latitude: capsuleLocation.lat,
+        longitude: capsuleLocation.lng,
         kakaoId: kakaoId.value,
     };
 
@@ -306,33 +317,26 @@ const createTimeCapsule = () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     axios
-    .post("http://localhost:8088/capsule/create", 
-        capsuleData, 
-        {
+        .post('http://localhost:8088/capsule/create', capsuleData, {
             headers,
-            withCredentials: true
-        }
-    )
-    .then((response) => {
-        console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
-        // router.push({ name : 'PageMain' });
-    })
-    .catch((error) => {
-        console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
-    });
+            withCredentials: true,
+        })
+        .then((response) => {
+            console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
+            router.push('/');
+        })
+        .catch((error) => {
+            console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
+        });
 
     console.log('타임캡슐 타이틀 : ', title.value);
     console.log('타임캡슐 내용 : ', content.value);
-    // console.log('타임캡슐 사진 : ', images.value);
     console.log('타임캡슐 개봉일 : ', unlockDate.value);
-    console.log('타임캡슐 위도 : ', lat.value);
-    console.log('타임캡슐 경도 : ', lng.value);
+    console.log('타임캡슐 위도 : ', capsuleLocation.lat);
+    console.log('타임캡슐 경도 : ', capsuleLocation.lng);
     console.log('타임캡슐 주소 : ', address.value);
     console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
-    router.push('/');
-
 };
-
 </script>
 
 <style scoped>
