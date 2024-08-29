@@ -9,7 +9,6 @@
                     style="width: 20px; height: 20px; margin: auto 5px"
                 />
                 <input type="text" placeholder="검색..." v-model="searchQuery" />
-                <button class="search-button" @click="goToAddLandmark">추가</button>
                 <button class="search-option" @click="toggleOptions">
                     지역
                     <span style="font-size: 10px">▼</span>
@@ -130,10 +129,6 @@ const handleClick = (landmark) => {
 
 const toggleOptions = () => {
     showOptions.value = !showOptions.value;
-};
-
-const goToAddLandmark = () => {
-    router.push({ name: 'LandmarkAdd' }); // LandmarkAdd 라우트로 이동
 };
 
 const deleteLandmark = async (landmarkId) => {

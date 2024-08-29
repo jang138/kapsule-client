@@ -56,9 +56,13 @@
                             class="capsule-content"
                             id="text"
                             v-model="landmarkContentText"
+                            placeholder="타임캡슐에 추가할 내용을 작성하세요"
                             required
-                            rows="2"
+                            rows="10"
                         ></textarea>
+                        <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
+                            {{ content.length }}/500
+                        </div>
                     </div>
                     <!-- <div>
                         <label for="lat">위도 (Latitude):</label>
