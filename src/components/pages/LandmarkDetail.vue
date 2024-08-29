@@ -15,6 +15,7 @@
         <div class="button-container">
             <button @click="addMyPage">Add my capsule</button>
             <button @click="goBack">Back to List</button>
+            <button v-if="isAdmin" @click="update">update</button>
         </div>
     </div>
     <div v-else>
@@ -22,64 +23,57 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { useLandmarkStore } from '@/stores/landmark-store';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router'; // useRoute 훅을 import
 
-export default {
-    setup() {
-        const store = useLandmarkStore();
-        const timelineStore = useTimelineStore();
-        const route = useRoute();
-        const router = useRouter();
+const store = useLandmarkStore();
+const timelineStore = useTimelineStore();
+const route = useRoute();
+const router = useRouter();
 
-        const landmarkId = parseInt(route.params.id);
+const landmarkId = parseInt(route.params.id);
 
-        // computed에서 landmark를 가져올 때 content가 유효한지 검사
-        const landmark = computed(() => {
-            const lm = store.getLandmarkById(landmarkId);
+// 관리자인지 확인
+const isAdmin = computed(() => store.isAdmin);
 
-            // content가 객체 형태로 파싱된 경우에만 사용
-            if (lm && lm.content && typeof lm.content === 'object') {
-                return lm;
-            } else {
-                console.warn('Landmark content is not in the correct JSON format:', lm);
-                return null; // 또는 빈 객체를 반환할 수 있음
-            }
-        });
+// computed에서 landmark를 가져올 때 content가 유효한지 검사
+const landmark = computed(() => {
+    const lm = store.getLandmarkById(landmarkId);
 
-        const goBack = () => {
-            router.push('/landmark');
+    // content가 객체 형태로 파싱된 경우에만 사용
+    if (lm && lm.content && typeof lm.content === 'object') {
+        return lm;
+    } else {
+        console.warn('Landmark content is not in the correct JSON format:', lm);
+        return null; // 또는 빈 객체를 반환할 수 있음
+    }
+});
+
+const goBack = () => {
+    router.push('/landmark');
+};
+
+const addMyPage = () => {
+    if (landmark.value) {
+        const newItem = {
+            title: landmark.value.title,
+            dateRange: landmark.value.content.daterange,
+            location: landmark.value.location,
+            coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng },
         };
 
-        const addMyPage = () => {
-            if (landmark.value) {
-                const newItem = {
-                    title: landmark.value.title,
-                    dateRange: landmark.value.content.daterange,
-                    location: landmark.value.location,
-                    coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng },
-                };
-
-                if (newItem.coordinates.lat && newItem.coordinates.lng) {
-                    timelineStore.addTimelineItem(newItem);
-                    router.push('/mypage');
-                } else {
-                    console.error('Coordinates are missing in newItem');
-                }
-            } else {
-                console.error('Landmark is not defined');
-            }
-        };
-
-        return {
-            landmark,
-            goBack,
-            addMyPage,
-        };
-    },
+        if (newItem.coordinates.lat && newItem.coordinates.lng) {
+            timelineStore.addTimelineItem(newItem);
+            router.push('/mypage');
+        } else {
+            console.error('Coordinates are missing in newItem');
+        }
+    } else {
+        console.error('Landmark is not defined');
+    }
 };
 </script>
 

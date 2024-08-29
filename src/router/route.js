@@ -57,6 +57,11 @@ const routes = [
                 name: 'OAuth',
                 component: OAuthCompo,
             },
+            {
+                path: '/landmark/edit/:id',
+                name: 'LandmarkEdit',
+                component: LandmarkAdd,
+            },
         ],
     },
 ];

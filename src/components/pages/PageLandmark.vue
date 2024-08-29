@@ -44,7 +44,7 @@
                         <p>{{ landmark.location }}</p>
                     </div>
                     <div class="landmark-action">
-                        <button class="delete-button" @click.stop="deleteLandmark(landmark.id)">
+                        <button v-if="isAdmin" class="delete-button" @click.stop="deleteLandmark(landmark.id)">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 id="Layer_1"
@@ -97,75 +97,63 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { useLandmarkStore } from '@/stores/landmark-store';
 import { computed, ref, onMounted } from 'vue'; // onMounted 훅 추가
 import { useRouter } from 'vue-router';
 
-export default {
-    setup() {
-        const store = useLandmarkStore();
-        const router = useRouter();
+// 스토어 및 라우터 초기화
+const store = useLandmarkStore();
+const router = useRouter();
 
-        // 검색 및 필터링과 관련된 상태 관리
-        const searchQuery = ref(''); // 사용자 입력을 저장하는 ref 변수
-        const selectedRegions = ref([]);
-        const showOptions = ref(false);
+// 관리자인지 확인
+const isAdmin = computed(() => store.isAdmin);
 
-        // Computed properties
-        const availableRegions = computed(() => store.availableRegions);
-        const filteredLandmarks = computed(() => {
-            return store
-                .filteredLandmarks(searchQuery.value, selectedRegions.value)
-                .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
-        });
+// 검색 및 필터링과 관련된 상태 관리
+const searchQuery = ref(''); // 사용자 입력을 저장하는 ref 변수
+const selectedRegions = ref([]);
+const showOptions = ref(false);
 
-        // Methods
-        const handleClick = (landmark) => {
-            console.log(`Clicked on ${landmark.title}`);
-            router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
-        };
+// Computed properties
+const availableRegions = computed(() => store.availableRegions);
+const filteredLandmarks = computed(() => {
+    return store
+        .filteredLandmarks(searchQuery.value, selectedRegions.value)
+        .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
+});
 
-        const toggleOptions = () => {
-            showOptions.value = !showOptions.value;
-        };
-
-        const goToAddLandmark = () => {
-            router.push({ name: 'LandmarkAdd' }); // LandmarkAdd 라우트로 이동
-        };
-
-        const deleteLandmark = async (landmarkId) => {
-            try {
-                await store.deleteLandmark(landmarkId);
-                alert('랜드마크가 삭제되었습니다.');
-            } catch (error) {
-                console.error('Failed to delete landmark:', error);
-                alert('랜드마크 삭제 중 오류가 발생했습니다.');
-            }
-        };
-
-        // 데이터 불러오기
-        onMounted(async () => {
-            try {
-                await store.fetchLandmarks(); // 데이터를 불러옴
-            } catch (error) {
-                console.error('Failed to fetch landmarks:', error);
-            }
-        });
-
-        return {
-            searchQuery,
-            selectedRegions,
-            showOptions,
-            availableRegions,
-            filteredLandmarks,
-            handleClick,
-            toggleOptions,
-            goToAddLandmark,
-            deleteLandmark,
-        };
-    },
+// Methods
+const handleClick = (landmark) => {
+    console.log(`Clicked on ${landmark.title}`);
+    router.push({ name: 'LandmarkDetail', params: { id: landmark.id } });
 };
+
+const toggleOptions = () => {
+    showOptions.value = !showOptions.value;
+};
+
+const goToAddLandmark = () => {
+    router.push({ name: 'LandmarkAdd' }); // LandmarkAdd 라우트로 이동
+};
+
+const deleteLandmark = async (landmarkId) => {
+    try {
+        await store.deleteLandmark(landmarkId);
+        alert('랜드마크가 삭제되었습니다.');
+    } catch (error) {
+        console.error('Failed to delete landmark:', error);
+        alert('랜드마크 삭제 중 오류가 발생했습니다.');
+    }
+};
+
+// 데이터 불러오기
+onMounted(async () => {
+    try {
+        await store.fetchLandmarks(); // 데이터를 불러옴
+    } catch (error) {
+        console.error('Failed to fetch landmarks:', error);
+    }
+});
 </script>
 
 <style scoped>
