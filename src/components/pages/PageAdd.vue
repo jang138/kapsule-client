@@ -80,6 +80,7 @@
 
 <script setup>
 import axios from 'axios';
+import router  from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const mapContainer = ref(null);
@@ -113,29 +114,6 @@ const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
 const userRole = ref('');
-const kakaoId = ref('');
-
-// JWT 토큰 디코딩 함수
-const decodeJWT = (token) => {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split('')
-                .map((c) => {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                })
-                .join(''),
-        );
-
-        return JSON.parse(jsonPayload);
-    } catch (error) {
-        console.error('Failed to decode JWT:', error);
-        return null;
-    }
-};
-
 const isContentLimitExceeded = computed(() => hasExceededLimit.value);
 
 watch(content, (newValue) => {
@@ -173,22 +151,19 @@ const decodeJWT = (token) => {
     }
 };
 
-onMounted(async () => {
-    try {
-        const jwtToken = localStorage.getItem('jwtToken');
-        if (jwtToken) {
-            const decodedToken = decodeJWT(jwtToken);
-            kakaoId.value = decodedToken?.sub;
-            console.log('마이 페이지 카카오 아이디: :', kakaoId); // 추출된 kakaoId 로그
-        } else {
-            console.log('No JWT token found in localStorage');
+onMounted(() => {
+    loadKakaoMap(mapContainer.value);
+    window.addEventListener('resize', handleResize);
+    // JWT 토큰에서 role과 kakaoId 추출
+    const jwtToken = localStorage.getItem('jwtToken');
+    if (jwtToken) {
+        const decodedToken = decodeJWT(jwtToken);
+        if (decodedToken) {
+            userRole.value = decodedToken.role;
+            kakaoId.value = decodedToken.sub;
+            console.log('User Role:', userRole.value);
+            console.log('Kakao ID:', kakaoId.value);
         }
-        if (!kakaoId.value) {
-            console.error('KakaoId not found in JWT token');
-            return;
-        }
-    } catch (error) {
-        console.error('Failed to fetch capsules:', error);
     }
 });
 
@@ -262,30 +237,7 @@ const refreshUserLocation = () => {
             (position) => {
                 lat.value = position.coords.latitude;
                 lng.value = position.coords.longitude;
-                userLocation.value = new window.kakao.maps.LatLng(lat.value, lng.value);
-                mapInstance.value.setCenter(userLocation.value);
-                mapInstance.value.setLevel(2);
-
-                if (marker.value) {
-                    marker.value.setMap(null);
-                }
-
-                marker.value = new window.kakao.maps.Marker({
-                    position: userLocation.value,
-                    map: mapInstance.value,
-                    title: '사용자의 위치',
-                    draggable: false,
-                });
-
-                const geocoder = new window.kakao.maps.services.Geocoder();
-                geocoder.coord2Address(lng.value, lat.value, (result, status) => {
-                    if (status === window.kakao.maps.services.Status.OK) {
-                        address.value = result[0].address.address_name;
-                    } else {
-                        address.value = 'Failed to convert address.';
-                    }
-                });
-                updateMarkerPosition(lat, lng);
+                updateMarkerPosition(lat.value, lng.value);
             },
             (error) => {
                 console.error('Error getting user location: ', error);
@@ -294,23 +246,6 @@ const refreshUserLocation = () => {
     } else {
         console.error('Geolocation is not supported by this browser.');
     }
-};
-
-const createTimeCapsule = () => {
-    const capsuleData = {
-        title: title.value,
-        content: content.value,
-        images: images.value.filter((img) => img !== null),
-        openingDate: openingDate.value === '직접 설정' ? customDate.value : openingDate.value,
-        isPrivate: isPrivate.value,
-        latitude: marker.value ? marker.value.getPosition().getLat() : null,
-        longitude: marker.value ? marker.value.getPosition().getLng() : null,
-        address: address.value,
-        kakaoId: kakaoId.value,
-    };
-
-    console.log('타임캡슐 데이터:', capsuleData);
-    // 여기에 서버로 데이터를 보내는 로직을 추가하세요.
 };
 
 // 이미지를 선택하는 함수
@@ -342,12 +277,13 @@ const updateCustomDate = (event) => {
     customDate.value = event.target.value;
 };
 
-watch(selectedDateOpt, (newVal) => {
-    if (newVal === 'customizing') {
-        unlockDate.value = customDate.value; 
+watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
+    if (newSelectedDateOpt === 'customizing') {
+        unlockDate.value = newCustomDate; 
+        console.log('Updated unlockDate:', unlockDate.value);
 
     } else {
-        const checkedOpt = parseInt(newVal);
+        const checkedOpt = parseInt(newSelectedDateOpt);
         const calculatedDate = new Date(today);
         calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
 
@@ -368,8 +304,6 @@ const createTimeCapsule = () => {
 
     const token = localStorage.getItem('jwtToken');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    console.log(token);
-    console.log(headers);
 
     axios
     .post("http://localhost:8088/capsule/create", 
@@ -381,6 +315,7 @@ const createTimeCapsule = () => {
     )
     .then((response) => {
         console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
+        // router.push({ name : 'PageMain' });
     })
     .catch((error) => {
         console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
@@ -394,6 +329,8 @@ const createTimeCapsule = () => {
     console.log('타임캡슐 경도 : ', lng.value);
     console.log('타임캡슐 주소 : ', address.value);
     console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
+    router.push('/');
+
 };
 
 </script>
