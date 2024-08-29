@@ -35,7 +35,7 @@ export default {
         const route = useRoute();
         const router = useRouter();
 
-        const isHidden = computed(() => route.path === '/capsule');
+        const isHidden = computed(() => route.path === '/capsule/create');
         const isMenuOpen = ref(false);
 
         function toggleMenu() {
@@ -43,7 +43,7 @@ export default {
         }
 
         function addCapsule() {
-            router.push('/capsule');
+            router.push('/capsule/create');
             isMenuOpen.value = false;
         }
 
