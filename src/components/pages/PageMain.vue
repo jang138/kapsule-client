@@ -2,9 +2,7 @@
     <div class="map-wrapper">
         <div class="map-container" ref="mapContainer"></div>
         <button class="refresh-location-btn" @click="refreshUserLocation">🔄</button>
-        <!-- <div class="location-info" v-if="address">
-            <p class="location-content">위치 : {{ address }}</p>
-        </div> -->
+        <div v-if="store.error" class="error-message">{{ store.error }}</div>
     </div>
 </template>
 
@@ -25,6 +23,27 @@ const store = useTimelineStore();
 const timelineMarkers = ref([]);
 const overlays = ref([]);
 const isUserLocationActive = ref(false);
+
+// JWT 토큰 디코딩 함수
+const decodeJWT = (token) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(''),
+        );
+
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        return null;
+    }
+};
 
 const moveToLocation = (lat, lng) => {
     if (!isMapReady.value || !window.kakao || !window.kakao.maps) return;
@@ -80,22 +99,25 @@ const updateTimelineMarkers = () => {
     overlays.value.forEach((overlay) => overlay.setMap(null));
     overlays.value = [];
 
-    store.timelineItems.forEach((item) => {
-        const position = new window.kakao.maps.LatLng(item.coordinates.lat, item.coordinates.lng);
+    const allItems = store.getAllTimelineItems();
+    if (Array.isArray(allItems)) {
+        allItems.forEach((item) => {
+            if (item.latitude && item.longitude) {
+                const position = new window.kakao.maps.LatLng(item.latitude, item.longitude);
 
-        const marker = new window.kakao.maps.Marker({
-            position: position,
-            map: mapInstance.value,
-            title: item.title,
-        });
+                const marker = new window.kakao.maps.Marker({
+                    position: position,
+                    map: mapInstance.value,
+                    title: item.title,
+                });
 
-        // 마커 클릭 시 오버레이 표시
-        window.kakao.maps.event.addListener(marker, 'click', () => {
-            // 기존 오버레이 제거
-            overlays.value.forEach((overlay) => overlay.setMap(null));
-            overlays.value = [];
+                // 마커 클릭 시 오버레이 표시
+                window.kakao.maps.event.addListener(marker, 'click', () => {
+                    // 기존 오버레이 제거
+                    overlays.value.forEach((overlay) => overlay.setMap(null));
+                    overlays.value = [];
 
-            const content = `
+                    const content = `
             <div class="overlay-content">
                 <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
                 <h3>${item.title}</h3>
@@ -104,23 +126,25 @@ const updateTimelineMarkers = () => {
             </div>
         `;
 
-            const overlay = new window.kakao.maps.CustomOverlay({
-                content: content,
-                position: position,
-                map: mapInstance.value,
-            });
+                    const overlay = new window.kakao.maps.CustomOverlay({
+                        content: content,
+                        position: position,
+                        map: mapInstance.value,
+                    });
 
-            overlays.value.push(overlay);
+                    overlays.value.push(overlay);
 
-            // "자세히 보기" 버튼 클릭 시 CapsuleDetail 페이지로 이동
-            const overlayBtn = overlay.a.querySelector('.overlay-btn');
-            overlayBtn.addEventListener('click', () => {
-                router.push(`/capsule/${item.coordinates.lat}/${item.coordinates.lng}`);
-            });
+                    // "자세히 보기" 버튼 클릭 시 CapsuleDetail 페이지로 이동
+                    const overlayBtn = overlay.a.querySelector('.overlay-btn');
+                    overlayBtn.addEventListener('click', () => {
+                        router.push(`/capsule/${item.coordinates.lat}/${item.coordinates.lng}`);
+                    });
+                });
+
+                timelineMarkers.value.push(marker);
+            }
         });
-
-        timelineMarkers.value.push(marker);
-    });
+    }
 };
 
 const updateAddress = (lat, lng) => {
@@ -160,48 +184,34 @@ const loadKakaoMap = (container) => {
 
         script.onload = () => {
             window.kakao.maps.load(() => {
-                const options = {
-                    center: new window.kakao.maps.LatLng(33.450701, 126.570667),
-                    level: 1,
-                };
-                mapInstance.value = new window.kakao.maps.Map(container, options);
-
-                const zoomControl = new window.kakao.maps.ZoomControl();
-                mapInstance.value.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
-
-                isMapReady.value = true;
-
-                if (route.params.lat && route.params.lng) {
-                    isUserLocationActive.value = false;
-                    moveToLocation(Number(route.params.lat), Number(route.params.lng));
-                } else {
-                    refreshUserLocation();
-                }
-
-                updateTimelineMarkers(); // 타임라인 마커 업데이트
+                initializeMap(container);
             });
         };
     } else {
-        const options = {
-            center: new window.kakao.maps.LatLng(33.450701, 126.570667),
-            level: 1,
-        };
-        mapInstance.value = new window.kakao.maps.Map(container, options);
-
-        const zoomControl = new window.kakao.maps.ZoomControl();
-        mapInstance.value.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
-
-        isMapReady.value = true;
-
-        if (route.params.lat && route.params.lng) {
-            isUserLocationActive.value = false;
-            moveToLocation(Number(route.params.lat), Number(route.params.lng));
-        } else {
-            refreshUserLocation();
-        }
-
-        updateTimelineMarkers(); // 타임라인 마커 업데이트
+        initializeMap(container);
     }
+};
+
+const initializeMap = (container) => {
+    const options = {
+        center: new window.kakao.maps.LatLng(33.450701, 126.570667),
+        level: 1,
+    };
+    mapInstance.value = new window.kakao.maps.Map(container, options);
+
+    const zoomControl = new window.kakao.maps.ZoomControl();
+    mapInstance.value.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+
+    isMapReady.value = true;
+
+    if (route.params.lat && route.params.lng) {
+        isUserLocationActive.value = false;
+        moveToLocation(Number(route.params.lat), Number(route.params.lng));
+    } else {
+        refreshUserLocation();
+    }
+
+    updateTimelineMarkers();
 };
 
 const handleResize = () => {
@@ -210,24 +220,50 @@ const handleResize = () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
 
-    // 타임라인 항목이 변경될 때마다 타임라인 마커 업데이트
+    try {
+        const jwtToken = localStorage.getItem('jwtToken');
+        console.log('Retrieved JWT token:', jwtToken); // JWT 토큰 로그
+
+        let kakaoId;
+
+        if (jwtToken) {
+            const decodedToken = decodeJWT(jwtToken);
+            console.log('Decoded JWT token:', decodedToken); // 디코딩된 토큰 로그
+
+            kakaoId = decodedToken?.sub;
+            console.log('Extracted kakaoId:', kakaoId); // 추출된 kakaoId 로그
+        } else {
+            console.log('No JWT token found in localStorage');
+        }
+
+        if (!kakaoId) {
+            console.error('KakaoId not found in JWT token');
+            return;
+        }
+
+        console.log('Fetching capsules for kakaoId:', kakaoId); // 캡슐 가져오기 전 kakaoId 로그
+        await store.fetchMyCapsules(kakaoId);
+        await store.fetchSharedCapsules(kakaoId);
+        console.log('Capsules fetched successfully'); // 캡슐 가져오기 성공 로그
+    } catch (error) {
+        console.error('Failed to fetch capsules:', error);
+    }
+
     watch(
-        () => store.timelineItems,
+        () => [store.myCapsules, store.sharedCapsules],
         () => {
             updateTimelineMarkers();
         },
-        { immediate: true },
+        { immediate: true, deep: true },
     );
 });
-
 onBeforeUnmount(() => {
     window.removeEventListener('resize', handleResize);
 
-    // 메모리 누수를 방지하기 위해 타임라인 마커 및 오버레이 제거
     timelineMarkers.value.forEach((marker) => marker.setMap(null));
     overlays.value.forEach((overlay) => overlay.setMap(null));
     if (userMarker.value) {
@@ -269,6 +305,18 @@ onBeforeUnmount(() => {
 
 .refresh-location-btn:active {
     background-color: #f0f0f0;
+}
+
+.error-message {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
 }
 
 .overlay-content {

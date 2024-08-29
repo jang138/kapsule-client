@@ -1,49 +1,127 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
+import axios from 'axios';
 
-export const useTimelineStore = defineStore("timeline", {
+const API_BASE_URL = 'http://localhost:8088';
+
+export const useTimelineStore = defineStore('timeline', {
     state: () => ({
-        timelineItems: [
-            {
-                title: "혜화역 미션!",
-                dateRange: "2024.08.23 ~ 2024.08.24",
-                location: "서울특별시 종로구 명륜동 4가 1 ",
-                coordinates: { lat: 37.582083337, lng: 127.001914726 },
-            },
-            {
-                title: "혜화 약국",
-                dateRange: "2024.07.01 ~ 2024.09.30",
-                location: "서울특별시 종로구 혜화동 109-1",
-                coordinates: { lat: 37.586436703496, lng: 127.00050862877 },
-            },
-            {
-                title: "타임캡슐 타이틀 3",
-                dateRange: "2024.08.11 ~ 2024.12.01",
-                location: "서울특별시 종로구 삼청로 4",
-                coordinates: { lat: 37.5798, lng: 126.9772 },
-            },
-            {
-                title: "한성대입구역",
-                dateRange: "2024.08.11 ~ 2024.12.01",
-                location: "서울특별시 성북구 삼선동1가 14",
-                coordinates: { lat: 37.588468215545, lng: 127.00631668479 },
-            },
-            {
-                title: "서울대학교 의과대학",
-                dateRange: "2024.08.11 ~ 2024.12.01",
-                location: "서울특별시 종로구 연건동 28-21",
-                coordinates: { lat: 37.580201794385, lng: 127.00190016466 },
-            },
-            {
-                title: "성균관대학교",
-                dateRange: "2024.08.11 ~ 2024.12.01",
-                location: "서울특별시 종로구 명륜3가 53",
-                coordinates: { lat: 37.584979066596, lng: 126.99694926632 },
-            },
-        ],
+        myCapsules: [],
+        sharedCapsules: [],
+        loading: false,
+        error: null,
     }),
     actions: {
-        addTimelineItem(item) {
-            this.timelineItems.push(item);
+        async fetchMyCapsules(kakaoId) {
+            return this.fetchData(`${API_BASE_URL}/capsule/list`, { kakaoId }, 'myCapsules');
+        },
+
+        async fetchSharedCapsules(kakaoId) {
+            return this.fetchData(`${API_BASE_URL}/key/findAll`, { kakaoId }, 'sharedCapsules');
+        },
+
+        async fetchData(url, params, stateKey) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.get(url, { params, headers });
+                this[stateKey] = response.data;
+                return response.data;
+            } catch (error) {
+                this.handleError(error, `Error fetching ${stateKey}`);
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        handleError(error, message) {
+            console.error(message, error);
+            if (error.response) {
+                console.error('Server responded with:', error.response.data);
+                console.error('Status code:', error.response.status);
+                this.error = `Server error: ${error.response.status}. ${error.response.data.message || ''}`;
+            } else if (error.request) {
+                console.error('No response received:', error.request);
+                this.error = 'No response from server';
+            } else {
+                console.error('Error setting up request:', error.message);
+                this.error = 'Request setup error';
+            }
+        },
+
+        getAllTimelineItems() {
+            return [...this.myCapsules, ...this.sharedCapsules];
+        },
+
+        async addCapsule(newCapsule) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.post(`${API_BASE_URL}/capsule/create`, newCapsule, { headers });
+                this.myCapsules.push(response.data);
+                return response.data;
+            } catch (error) {
+                this.handleError(error, 'Error adding new capsule');
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async deleteCapsule(capsuleId) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.delete(`${API_BASE_URL}/capsule/${capsuleId}`, { headers });
+                this.myCapsules = this.myCapsules.filter((capsule) => capsule.id !== capsuleId);
+            } catch (error) {
+                this.handleError(error, 'Error deleting capsule');
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async updateCapsule(capsuleId, updatedData) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.put(`${API_BASE_URL}/capsule/${capsuleId}`, updatedData, { headers });
+                const index = this.myCapsules.findIndex((capsule) => capsule.id === capsuleId);
+                if (index !== -1) {
+                    this.myCapsules[index] = response.data;
+                }
+                return response.data;
+            } catch (error) {
+                this.handleError(error, 'Error updating capsule');
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async addSharedCapsule(capsuleCode, kakaoId) {
+            this.loading = true;
+            try {
+                const response = await axios.post(`${API_BASE_URL}/key/save`, null, {
+                    params: { capsuleCode, kakaoId },
+                });
+                // 서버 응답을 확인하여 성공 여부를 판단합니다.
+                return { success: true, data: response.data };
+            } catch (error) {
+                console.error('Error adding shared capsule:', error);
+                return { success: false, error: error.response?.data?.message || '캡슐 추가 중 오류가 발생했습니다.' };
+            } finally {
+                this.loading = false;
+            }
         },
     },
 });
