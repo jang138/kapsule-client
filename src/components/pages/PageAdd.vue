@@ -219,6 +219,19 @@ const decodeJWT = (token) => {
     }
 };
 
+// 파일을 Blob으로 변환하는 함수
+// const dataURLtoBlob = (dataURL) => {
+//     const arr = dataURL.split(',');
+//     const mime = arr[0].match(/:(.*?);/)[1];
+//     const bstr = atob(arr[1]);
+//     let n = bstr.length;
+//     const u8arr = new Uint8Array(n);
+//     while (n--) {
+//         u8arr[n] = bstr.charCodeAt(n);
+//     }
+//     return new Blob([u8arr], { type: mime });
+// };
+
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
@@ -308,6 +321,12 @@ const refreshUserLocation = () => {
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
+
+                // Update lat and lng refs
+
+                lat.value = userLat;
+                lng.value = userLng;
+
                 if (userRole.value !== 'ROLE_ADMIN' || !selectedLocation.value) {
                     updateMarkerPosition(userLat, userLng);
                 }
@@ -431,6 +450,7 @@ const createTimeCapsule = () => {
     console.log('타임캡슐 경도 : ', capsuleLocation.lng);
     console.log('타임캡슐 주소 : ', address.value);
     console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
+    console.log('업로드된 이미지 수:', images.value.filter((img) => img !== null).length);
 };
 </script>
 
