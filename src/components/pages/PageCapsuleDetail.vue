@@ -1,44 +1,55 @@
 <template>
     <div class="container">
-        <div class="map-wrapper">
-            <div class="map-container" ref="mapContainer"></div>
+        <!-- 오류 메시지 -->
+        <div v-if="errorMessage" class="not-found-container">
+            <div class="not-found-content">
+                <h1 class="not-found-title">⚠️</h1>
+                <p class="not-found-description">{{ errorMessage }}</p>
+                <router-link to="/" class="main-link">Go to Main</router-link>
+            </div>
         </div>
 
-        <div class="location-info" v-if="address">
-            <p v-if="capsuleType === 2">랜드마크 위치 : {{ address }}</p>
-            <p v-else-if="capsuleType === 1">타임캡슐 위치 : {{ address }}</p>
-        </div>
-
-        <div class="time-capsule-form-group">
-            <!-- 타이틀 -->
-            <div class="form-group">
-                <p v-if="capsuleType === 2" class="capsule-title">{{ landmarkData?.title }}</p>
-                <p v-else-if="capsuleType === 1" class="capsule-title">{{ capsuleData?.title }}</p>
+        <div v-else>
+            <div class="map-wrapper">
+                <div class="map-container" ref="mapContainer"></div>
             </div>
 
-            <!-- 기간 또는 운영시간 -->
-            <div class="form-group">
-                <div v-if="capsuleType === 2" class="info-box">
-                    <div class="info-icon">🕒</div>
-                    <div class="info-text">운영시간 : {{ landmarkData?.unlockDate }}</div>
+            <div class="location-info" v-if="address">
+                <p v-if="capsuleType === 2">랜드마크 위치 : {{ address }}</p>
+                <p v-else-if="capsuleType === 1">타임캡슐 위치 : {{ address }}</p>
+            </div>
+
+            <div class="time-capsule-form-group">
+                <!-- 타이틀 -->
+                <div class="form-group">
+                    <p v-if="capsuleType === 2" class="capsule-title">{{ landmarkData?.title }}</p>
+                    <p v-else-if="capsuleType === 1" class="capsule-title">{{ capsuleData?.title }}</p>
                 </div>
-                <div v-else-if="capsuleType === 1" class="info-box">
-                    <div class="info-icon">📅</div>
-                    <div class="info-text">타임캡슐 기간 : {{ capsuleData?.unlockDate }}</div>
+
+                <!-- 기간 또는 운영시간 -->
+                <div class="form-group">
+                    <div v-if="capsuleType === 2" class="info-box">
+                        <div class="info-icon">🕒</div>
+                        <div class="info-text">운영시간 : {{ landmarkData?.unlockDate }}</div>
+                    </div>
+                    <div v-else-if="capsuleType === 1" class="info-box">
+                        <div class="info-icon">📅</div>
+                        <div class="info-text">타임캡슐 기간 : {{ capsuleData?.unlockDate }}</div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 내용 -->
-            <div class="form-group">
-                <div v-if="capsuleType === 2" class="capsule-content" v-html="landmarkData?.content"></div>
-                <div v-else-if="capsuleType === 1" class="capsule-content" v-html="capsuleData?.content"></div>
-            </div>
+                <!-- 내용 -->
+                <div class="form-group">
+                    <div v-if="capsuleType === 2" class="capsule-content" v-html="landmarkData?.content"></div>
+                    <div v-else-if="capsuleType === 1" class="capsule-content" v-html="capsuleData?.content"></div>
+                </div>
 
-            <!-- 이미지 섹션 -->
-            <div class="form-group">
-                <div class="image-grid" v-if="imageList.length > 0">
-                    <div class="image-box" v-for="(image, index) in imageList" :key="index">
-                        <img :src="image" :alt="`Image ${index + 1}`" />
+                <!-- 이미지 섹션 -->
+                <div class="form-group">
+                    <div class="image-grid" v-if="imageList.length > 0">
+                        <div class="image-box" v-for="(image, index) in imageList" :key="index">
+                            <img :src="image" :alt="`Image ${index + 1}`" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,6 +76,9 @@ const capsuleType = ref(null);
 
 // 이미지 목록
 const imageList = ref([]);
+
+// 오류 메시지 상태
+const errorMessage = ref(null);
 
 // 지도 로딩 및 설정
 const loadKakaoMap = (container) => {
@@ -120,7 +134,6 @@ const fetchCapsuleData = async () => {
 
         const data = response.data;
 
-        // 데이터 설정
         capsuleType.value = data.capsuleType;
         lat.value = data.latitude;
         lng.value = data.longitude;
@@ -134,12 +147,20 @@ const fetchCapsuleData = async () => {
 
         loadKakaoMap(mapContainer.value);
     } catch (error) {
-        console.error('타임캡슐 데이터 가져오기 오류:', error);
+        if (error.response && error.response.status === 403) {
+            // 접근 권한 없음
+            errorMessage.value = '접근 권한이 없습니다.';
+        } else if (error.response && error.response.status === 404) {
+            // 데이터 없음
+            errorMessage.value = '타임캡슐을 찾을 수 없습니다.';
+        } else {
+            // 기타 오류
+            errorMessage.value = '타임캡슐 데이터 가져오기 오류';
+        }
     }
 };
 
 onMounted(() => {
-    memberStore.initializeStore();
     fetchCapsuleData();
 });
 </script>
@@ -157,10 +178,84 @@ onMounted(() => {
     font-family: 'Nanum Gothic', sans-serif;
 }
 
+.not-found-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    background-color: #989a9c;
+    color: #333;
+    font-family: 'Jersey 10', sans-serif;
+    text-align: center;
+    user-select: none;
+}
+
+.not-found-content {
+    max-width: 600px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: shake 0.6s ease;
+    transform: scale(1.2);
+}
+
+@keyframes shake {
+    0% {
+        transform: scale(1.2) translateX(0);
+    }
+    25% {
+        transform: scale(1.2) translateX(-10px);
+    }
+    50% {
+        transform: scale(1.2) translateX(10px);
+    }
+    75% {
+        transform: scale(1.2) translateX(-10px);
+    }
+    100% {
+        transform: scale(1.2) translateX(0);
+    }
+}
+
+.not-found-title {
+    font-size: 4rem;
+    margin: 0;
+    color: #dc3545;
+    font-family: 'Jersey 10', sans-serif;
+}
+
+.not-found-subtitle {
+    font-size: 2rem;
+    margin: 10px 0;
+}
+
+.not-found-description {
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+.main-link {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-family: 'Jersey 10', sans-serif;
+    color: #fff;
+    background-color: #dc3545;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.main-link:hover {
+    background-color: #7d0a0a;
+}
+
 .map-wrapper {
     position: relative;
     width: 100%;
-    height: 30%;
+    height: 40%;
 }
 
 .map-container {
@@ -253,6 +348,7 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     position: relative;
+    overflow: hidden;
 }
 
 .image-box img {

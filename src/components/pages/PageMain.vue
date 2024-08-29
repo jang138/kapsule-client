@@ -9,10 +9,9 @@
 <script setup>
 import { useTimelineStore } from '@/stores/timelineStore';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const router = useRouter();
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
@@ -118,13 +117,13 @@ const updateTimelineMarkers = () => {
                     overlays.value = [];
 
                     const content = `
-            <div class="overlay-content">
-                <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
-                <h3>${item.title}</h3>
-                <p>${item.location}</p>
-                <button class="overlay-btn">자세히 보기</button>
-            </div>
-        `;
+                        <div class="overlay-content">
+                            <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
+                            <h3>${item.title}</h3>
+                            <p>${item.address}</p>
+                            <button class="overlay-btn" data-id="${item.id}">자세히 보기</button>
+                        </div>
+                    `;
 
                     const overlay = new window.kakao.maps.CustomOverlay({
                         content: content,
@@ -134,10 +133,13 @@ const updateTimelineMarkers = () => {
 
                     overlays.value.push(overlay);
 
-                    // "자세히 보기" 버튼 클릭 시 CapsuleDetail 페이지로 이동
+                    // "자세히 보기" 버튼 클릭 시 URL 이동
                     const overlayBtn = overlay.a.querySelector('.overlay-btn');
-                    overlayBtn.addEventListener('click', () => {
-                        router.push(`/capsule/${item.coordinates.lat}/${item.coordinates.lng}`);
+                    overlayBtn.addEventListener('click', (event) => {
+                        const itemId = event.target.getAttribute('data-id');
+                        if (itemId) {
+                            window.location.href = `https://localhost:8080/capsule/${itemId}`;
+                        }
                     });
                 });
 
@@ -223,7 +225,6 @@ const handleResize = () => {
 onMounted(async () => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
-
     try {
         const jwtToken = localStorage.getItem('jwtToken');
         console.log('Retrieved JWT token:', jwtToken); // JWT 토큰 로그
