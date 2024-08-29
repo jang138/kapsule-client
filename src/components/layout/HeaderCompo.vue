@@ -18,11 +18,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import kakaoIcon from '@/assets/icon_kakao.png';
 import { useMemberStore } from '@/stores/memberStore';
 import { storeToRefs } from 'pinia';
-import kakaoIcon from '@/assets/icon_kakao.png';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const memberStore = useMemberStore();

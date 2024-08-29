@@ -1,11 +1,12 @@
 import MiddleFront from '@/components/layout/MiddleFront.vue';
 import LandmarkDetail from '@/components/pages/LandmarkDetail.vue';
+import OAuthCompo from '@/components/pages/OAuthCompo.vue';
 import PageAdd from '@/components/pages/PageAdd.vue';
+import PageCapsuleDetail from '@/components/pages/PageCapsuleDetail.vue';
 import PageLandmark from '@/components/pages/PageLandmark.vue';
 import PageMain from '@/components/pages/PageMain.vue';
-import PageNotFound from '@/components/pages/PageNotFound.vue';
 import PageMyPage from '@/components/pages/PageMyPage.vue';
-import OAuthCompo from '@/components/pages/OAuthCompo.vue';
+import PageNotFound from '@/components/pages/PageNotFound.vue';
 
 const routes = [
     {
@@ -24,12 +25,8 @@ const routes = [
                 props: true,
             },
             {
-                path: 'capsule',
+                path: '/capsule/create',
                 component: PageAdd,
-            },
-            {
-                path: '/:catchAll(.*)',
-                component: PageNotFound,
             },
             {
                 path: '/myPage',
@@ -50,6 +47,16 @@ const routes = [
                 path: '/auth/oauth-response/:token/:expirationTime',
                 name: 'OAuth',
                 component: OAuthCompo,
+            },
+            {
+                path: '/capsule/:id',
+                component: PageCapsuleDetail,
+                name: 'CapsuleDetail',
+                props: true,
+            },
+            {
+                path: '/:catchAll(.*)',
+                component: PageNotFound,
             },
         ],
     },
