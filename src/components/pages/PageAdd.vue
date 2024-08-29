@@ -69,14 +69,6 @@
                 </div>
             </div>
 
-            <!-- 비공개 여부 설정 -->
-            <div class="form-group private-setting-group">
-                <label for="isPrivate">
-                    타임캡슐 비공개
-                    <input type="checkbox" id="isPrivate" v-model="isPrivate" />
-                </label>
-            </div>
-
             <div class="button-wrapper">
                 <button class="btn-create_capsule" @click="createTimeCapsule">생성</button>
             </div>
