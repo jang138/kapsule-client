@@ -61,14 +61,17 @@ const addMyPage = () => {
         const newItem = {
             title: landmark.value.title,
             dateRange: landmark.value.content.daterange,
-            location: landmark.value.location,
+            location: landmark.value.address,
             lat: landmark.value.latitude,
             lng: landmark.value.longitude,
+            unlockDate: landmark.value.unlockDate,
+            address: landmark.value.address,
+            image: landmark.value.image,
         };
 
         if (newItem.lat && newItem.lng) {
-            timelineStore.addTimelineItem(newItem);
-            router.push('/mypage');
+            timelineStore.addTimelineItem(newItem); // 타임라인에 새 아이템 추가
+            router.push('/mypage'); // 마이페이지로 이동
         } else {
             console.error('Coordinates are missing in newItem');
         }
