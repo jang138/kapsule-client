@@ -7,8 +7,10 @@ module.exports = defineConfig({
             '/api': {
                 target: 'http://localhost:8088', // Spring Boot 서버의 기본 URL
                 changeOrigin: true,
+                secure: true,
                 pathRewrite: { '^/api': '' }, // API 요청 경로에서 '/api' 제거
             },
         },
     },
 });
+0;

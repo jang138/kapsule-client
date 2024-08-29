@@ -38,6 +38,7 @@ const routes = [
             {
                 path: 'landmark',
                 component: PageLandmark,
+                name: 'LandmarkList',
             },
             {
                 // 랜드마크 상세 페이지를 위한 경로

@@ -14,15 +14,78 @@
             </div>
 
             <div class="input-group">
-                <textarea
-                    class="capsule-content"
-                    v-model="content"
-                    :class="{ error: isContentLimitExceeded }"
-                    placeholder="타임캡슐에 추가할 내용을 작성하세요"
-                    rows="10"
-                ></textarea>
-                <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
-                    {{ content.length }}/500
+                <!-- 일반 사용자일 경우 보이는 부분 -->
+                <div v-if="!isAdmin">
+                    <textarea
+                        class="capsule-content"
+                        v-model="content"
+                        :class="{ error: isContentLimitExceeded }"
+                        placeholder="타임캡슐에 추가할 내용을 작성하세요"
+                        rows="10"
+                    ></textarea>
+                    <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
+                        {{ content.length }}/500
+                    </div>
+                </div>
+
+                <!-- 관리자일 경우 보이는 부분 -->
+                <div v-if="isAdmin">
+                    <div>
+                        <label for="daterange">운영시간:</label>
+                        <textarea
+                            class="capsule-content"
+                            id="daterange"
+                            v-model="landmarkContentDaterange"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="subtitle">소제목:</label>
+                        <textarea
+                            class="capsule-content"
+                            id="subtitle"
+                            v-model="landmarkContentSubtitle"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="text">본문:</label>
+                        <textarea
+                            class="capsule-content"
+                            id="text"
+                            v-model="landmarkContentText"
+                            placeholder="타임캡슐에 추가할 내용을 작성하세요"
+                            required
+                            rows="10"
+                        ></textarea>
+                        <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
+                            {{ content.length }}/500
+                        </div>
+                    </div>
+                    <!-- <div>
+                        <label for="lat">위도 (Latitude):</label>
+                        <textarea
+                            type="number"
+                            id="lat"
+                            v-model="landmark.coordinates.lat"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="lng">경도 (Longitude):</label>
+                        <textarea
+                            type="number"
+                            id="lng"
+                            v-model="landmark.coordinates.lng"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div> -->
                 </div>
             </div>
 
@@ -82,12 +145,14 @@
 import axios from 'axios';
 import router from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useLandmarkStore } from '@/stores/landmark-store';
 
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
 const marker = ref(null);
 const address = ref('');
+const store = useLandmarkStore();
 
 // 타임캡슐 폼 관련 상태 관리
 const title = ref('');
@@ -104,6 +169,13 @@ const unlockDate = ref('');
 const today = new Date();
 const minDate = today.toISOString().split('T')[0];
 const maxDate = new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0];
+
+const landmarkContentDaterange = ref('');
+const landmarkContentSubtitle = ref('');
+const landmarkContentText = ref('');
+
+// 관리자인지 확인
+const isAdmin = computed(() => store.isAdmin);
 
 const lat = ref('');
 const lng = ref('');
@@ -314,17 +386,44 @@ watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
     }
 });
 
+const landmark = ref({
+    title: '',
+    content: {
+        daterange: '',
+        subtitle: '',
+        text: '',
+    },
+    coordinates: {
+        lat: '',
+        lng: '',
+    },
+    unlockDate: '',
+    address: '',
+});
+
 const createTimeCapsule = () => {
     let capsuleLocation;
+
+    // 관리자인 경우, 폼에서 받은 데이터를 landmark.value.content에 저장
+    if (isAdmin.value) {
+        landmark.value.content.daterange = landmarkContentDaterange.value; // 운영시간 데이터
+        landmark.value.content.subtitle = landmarkContentSubtitle.value; // 소제목 데이터
+        landmark.value.content.text = landmarkContentText.value; // 본문 데이터
+    }
+
     if (userRole.value === 'ROLE_ADMIN' && selectedLocation.value) {
         capsuleLocation = selectedLocation.value;
+
+        landmark.value.coordinates.lat = capsuleLocation.lat;
+        landmark.value.coordinates.lng = capsuleLocation.lng;
+        landmark.value.address = address.value;
     } else {
         capsuleLocation = { lat: lat.value, lng: lng.value };
     }
 
     const capsuleData = {
         title: title.value,
-        content: content.value,
+        content: isAdmin.value ? landmark.value.content : content.value,
         unlockDate: unlockDate.value,
         address: address.value,
         latitude: capsuleLocation.lat,
@@ -335,8 +434,11 @@ const createTimeCapsule = () => {
     const token = localStorage.getItem('jwtToken');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+    // 관리자인 경우 엔드포인트를 /landmark/create로 설정
+    const endpoint = isAdmin.value ? 'http://localhost:8088/landmark/create' : 'http://localhost:8088/capsule/create';
+
     axios
-        .post('http://localhost:8088/capsule/create', capsuleData, {
+        .post(endpoint, capsuleData, {
             headers,
             withCredentials: true,
         })
@@ -349,7 +451,7 @@ const createTimeCapsule = () => {
         });
 
     console.log('타임캡슐 타이틀 : ', title.value);
-    console.log('타임캡슐 내용 : ', content.value);
+    console.log('타임캡슐 내용 : ', isAdmin.value ? landmark.value.content : content.value);
     console.log('타임캡슐 개봉일 : ', unlockDate.value);
     console.log('타임캡슐 위도 : ', capsuleLocation.lat);
     console.log('타임캡슐 경도 : ', capsuleLocation.lng);
