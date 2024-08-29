@@ -60,32 +60,7 @@
                             required
                             rows="10"
                         ></textarea>
-                        <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
-                            {{ content.length }}/500
-                        </div>
                     </div>
-                    <!-- <div>
-                        <label for="lat">위도 (Latitude):</label>
-                        <textarea
-                            type="number"
-                            id="lat"
-                            v-model="landmark.coordinates.lat"
-                            step="0.00000000000001"
-                            required
-                            rows="2"
-                        ></textarea>
-                    </div>
-                    <div>
-                        <label for="lng">경도 (Longitude):</label>
-                        <textarea
-                            type="number"
-                            id="lng"
-                            v-model="landmark.coordinates.lng"
-                            step="0.00000000000001"
-                            required
-                            rows="2"
-                        ></textarea>
-                    </div> -->
                 </div>
             </div>
 
@@ -145,14 +120,12 @@
 import axios from 'axios';
 import router from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useLandmarkStore } from '@/stores/landmark-store';
 
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
 const marker = ref(null);
 const address = ref('');
-const store = useLandmarkStore();
 
 // 타임캡슐 폼 관련 상태 관리
 const title = ref('');
@@ -170,13 +143,6 @@ const today = new Date();
 const minDate = today.toISOString().split('T')[0];
 const maxDate = new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0];
 
-const landmarkContentDaterange = ref('');
-const landmarkContentSubtitle = ref('');
-const landmarkContentText = ref('');
-
-// 관리자인지 확인
-const isAdmin = computed(() => store.isAdmin);
-
 const lat = ref('');
 const lng = ref('');
 
@@ -186,7 +152,13 @@ const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
 const userRole = ref('');
+const isAdmin = computed(() => userRole.value === 'ROLE_ADMIN');
 const isContentLimitExceeded = computed(() => hasExceededLimit.value);
+
+// 관리자용 추가 필드
+const landmarkContentDaterange = ref('');
+const landmarkContentSubtitle = ref('');
+const landmarkContentText = ref('');
 
 watch(content, (newValue) => {
     if (newValue.length > contentLimit) {
@@ -223,19 +195,6 @@ const decodeJWT = (token) => {
     }
 };
 
-// 파일을 Blob으로 변환하는 함수
-// const dataURLtoBlob = (dataURL) => {
-//     const arr = dataURL.split(',');
-//     const mime = arr[0].match(/:(.*?);/)[1];
-//     const bstr = atob(arr[1]);
-//     let n = bstr.length;
-//     const u8arr = new Uint8Array(n);
-//     while (n--) {
-//         u8arr[n] = bstr.charCodeAt(n);
-//     }
-//     return new Blob([u8arr], { type: mime });
-// };
-
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
@@ -270,7 +229,7 @@ const loadKakaoMap = (container) => {
 
             mapInstance.value = new window.kakao.maps.Map(container, options);
 
-            if (userRole.value === 'ROLE_ADMIN') {
+            if (isAdmin.value) {
                 // 관리자용 지도 클릭 이벤트 추가
                 window.kakao.maps.event.addListener(mapInstance.value, 'click', function (mouseEvent) {
                     const latlng = mouseEvent.latLng;
@@ -326,12 +285,10 @@ const refreshUserLocation = () => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
 
-                // Update lat and lng refs
-
                 lat.value = userLat;
                 lng.value = userLng;
 
-                if (userRole.value !== 'ROLE_ADMIN' || !selectedLocation.value) {
+                if (!isAdmin.value || !selectedLocation.value) {
                     updateMarkerPosition(userLat, userLng);
                 }
             },
@@ -344,8 +301,6 @@ const refreshUserLocation = () => {
     }
 };
 
-// 이미지를 선택하는 함수
-// TODO 이미지 선택창이 두 번 연속으로 나타나는 오류 발생
 const selectImage = (index) => {
     selectedIndex.value = index;
     fileInput.value.click();
@@ -368,7 +323,6 @@ const onImageUpload = (event) => {
     event.target.value = null;
 };
 
-// 날짜 선택 함수
 const updateCustomDate = (event) => {
     customDate.value = event.target.value;
 };
@@ -376,7 +330,6 @@ const updateCustomDate = (event) => {
 watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
     if (newSelectedDateOpt === 'customizing') {
         unlockDate.value = newCustomDate;
-        console.log('Updated unlockDate:', unlockDate.value);
     } else {
         const checkedOpt = parseInt(newSelectedDateOpt);
         const calculatedDate = new Date(today);
@@ -385,79 +338,79 @@ watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
         unlockDate.value = calculatedDate.toISOString().split('T')[0];
     }
 });
-
-const landmark = ref({
-    title: '',
-    content: {
-        daterange: '',
-        subtitle: '',
-        text: '',
-    },
-    coordinates: {
-        lat: '',
-        lng: '',
-    },
-    unlockDate: '',
-    address: '',
-});
-
 const createTimeCapsule = () => {
     let capsuleLocation;
-
-    // 관리자인 경우, 폼에서 받은 데이터를 landmark.value.content에 저장
-    if (isAdmin.value) {
-        landmark.value.content.daterange = landmarkContentDaterange.value; // 운영시간 데이터
-        landmark.value.content.subtitle = landmarkContentSubtitle.value; // 소제목 데이터
-        landmark.value.content.text = landmarkContentText.value; // 본문 데이터
-    }
-
-    if (userRole.value === 'ROLE_ADMIN' && selectedLocation.value) {
+    if (isAdmin.value && selectedLocation.value) {
         capsuleLocation = selectedLocation.value;
-
-        landmark.value.coordinates.lat = capsuleLocation.lat;
-        landmark.value.coordinates.lng = capsuleLocation.lng;
-        landmark.value.address = address.value;
     } else {
         capsuleLocation = { lat: lat.value, lng: lng.value };
     }
 
-    const capsuleData = {
-        title: title.value,
-        content: isAdmin.value ? landmark.value.content : content.value,
-        unlockDate: unlockDate.value,
-        address: address.value,
-        latitude: capsuleLocation.lat,
-        longitude: capsuleLocation.lng,
-        kakaoId: kakaoId.value,
-    };
+    const formData = new FormData();
+    formData.append('title', title.value);
+    formData.append('unlockDate', unlockDate.value);
+    formData.append('address', address.value);
+    formData.append('latitude', capsuleLocation.lat);
+    formData.append('longitude', capsuleLocation.lng);
+    formData.append('kakaoId', kakaoId.value);
+
+    if (isAdmin.value) {
+        formData.append(
+            'content',
+            JSON.stringify({
+                daterange: landmarkContentDaterange.value,
+                subtitle: landmarkContentSubtitle.value,
+                text: landmarkContentText.value,
+            }),
+        );
+    } else {
+        formData.append('content', content.value);
+    }
+
+    // Append images if they exist
+    images.value.forEach((img, index) => {
+        if (img) {
+            const blob = dataURLtoBlob(img);
+            formData.append('images', blob, `image_${index}.png`);
+        }
+    });
 
     const token = localStorage.getItem('jwtToken');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    // 관리자인 경우 엔드포인트를 /landmark/create로 설정
     const endpoint = isAdmin.value ? 'http://localhost:8088/landmark/create' : 'http://localhost:8088/capsule/create';
 
     axios
-        .post(endpoint, capsuleData, {
-            headers,
+        .post(endpoint, formData, {
+            headers: {
+                ...headers,
+                'Content-Type': 'multipart/form-data',
+            },
             withCredentials: true,
         })
-        .then((response) => {
-            console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
+        .then(() => {
+            console.log('타임캡슐이 성공적으로 생성되었습니다:', headers);
             router.push('/');
         })
         .catch((error) => {
-            console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
+            console.error(
+                '타임캡슐 생성 중 오류가 발생했습니다:',
+                error.response ? error.response.data : error.message,
+            );
         });
+};
 
-    console.log('타임캡슐 타이틀 : ', title.value);
-    console.log('타임캡슐 내용 : ', isAdmin.value ? landmark.value.content : content.value);
-    console.log('타임캡슐 개봉일 : ', unlockDate.value);
-    console.log('타임캡슐 위도 : ', capsuleLocation.lat);
-    console.log('타임캡슐 경도 : ', capsuleLocation.lng);
-    console.log('타임캡슐 주소 : ', address.value);
-    console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
-    console.log('업로드된 이미지 수:', images.value.filter((img) => img !== null).length);
+// Data URL을 Blob으로 변환하는 함수
+const dataURLtoBlob = (dataURL) => {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
 };
 </script>
 
