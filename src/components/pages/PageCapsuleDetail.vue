@@ -30,8 +30,9 @@
                 <div class="form-group">
                     <div v-if="capsuleType === 2" class="info-box">
                         <div class="info-icon">🕒</div>
-                        <div class="info-text">운영시간 : {{ landmarkData?.unlockDate }}</div>
+                        <div class="info-text">운영시간 : {{ contentData.daterange }}</div>
                     </div>
+                    <div v-if="capsuleType === 2" class="landmark-subtitle">{{ contentData.subtitle }}</div>
                     <div v-else-if="capsuleType === 1" class="info-box">
                         <div class="info-icon">📅</div>
                         <div class="info-text">타임캡슐 기간 : {{ capsuleData?.unlockDate }}</div>
@@ -40,7 +41,7 @@
 
                 <!-- 내용 -->
                 <div class="form-group">
-                    <div v-if="capsuleType === 2" class="capsule-content" v-html="landmarkData?.content"></div>
+                    <div v-if="capsuleType === 2" class="capsule-content">{{ contentData.text }}</div>
                     <div v-else-if="capsuleType === 1" class="capsule-content" v-html="capsuleData?.content"></div>
                 </div>
 
@@ -70,6 +71,7 @@ const mapContainer = ref(null);
 const mapInstance = ref(null);
 const capsuleData = ref(null);
 const landmarkData = ref(null);
+
 const lat = ref(null);
 const lng = ref(null);
 const capsuleType = ref(null);
@@ -79,6 +81,13 @@ const imageList = ref([]);
 
 // 오류 메시지 상태
 const errorMessage = ref(null);
+
+// JSON 파싱된 컨텐츠 정보
+const contentData = ref({
+    daterange: '',
+    subtitle: '',
+    text: '',
+});
 
 // 지도 로딩 및 설정
 const loadKakaoMap = (container) => {
@@ -141,6 +150,15 @@ const fetchCapsuleData = async () => {
 
         if (capsuleType.value === 2) {
             landmarkData.value = data;
+
+            // content 필드가 JSON 문자열로 되어있다고 가정하고 파싱
+            if (landmarkData.value.content) {
+                try {
+                    contentData.value = JSON.parse(landmarkData.value.content);
+                } catch (error) {
+                    console.error('Content JSON 파싱 중 오류 발생:', error);
+                }
+            }
         } else if (capsuleType.value === 1) {
             capsuleData.value = data;
         }
@@ -290,6 +308,15 @@ onMounted(() => {
     font-size: 1.2em;
     font-weight: bold;
     border-bottom: 1px solid #a2b5bb;
+    padding-bottom: 5px;
+    margin-bottom: 30px;
+    text-align: center;
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+.landmark-subtitle {
+    font-size: 1em;
+    font-weight: bold;
     padding-bottom: 5px;
     margin-bottom: 30px;
     text-align: center;
