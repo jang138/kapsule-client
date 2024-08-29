@@ -9,7 +9,7 @@
 <script setup>
 import { useTimelineStore } from '@/stores/timelineStore';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const mapContainer = ref(null);
@@ -20,7 +20,10 @@ const address = ref('');
 const isMapReady = ref(false);
 const store = useTimelineStore();
 const timelineMarkers = ref([]);
+const overlays = ref([]);
 const isUserLocationActive = ref(false);
+
+const router = useRouter();
 
 // JWT 토큰 디코딩 함수
 const decodeJWT = (token) => {
@@ -47,6 +50,8 @@ const moveToLocation = (lat, lng) => {
     if (!isMapReady.value || !window.kakao || !window.kakao.maps) return;
 
     const location = new window.kakao.maps.LatLng(lat, lng);
+    userLocation.value = location;
+
     mapInstance.value.setCenter(location);
     mapInstance.value.setLevel(1);
 
@@ -89,9 +94,11 @@ const updateUserMarker = (lat, lng) => {
 const updateTimelineMarkers = () => {
     if (!isMapReady.value || !window.kakao || !window.kakao.maps) return;
 
-    // 기존 타임라인 마커 제거
+    // 기존 타임라인 마커 및 오버레이 제거
     timelineMarkers.value.forEach((marker) => marker.setMap(null));
     timelineMarkers.value = [];
+    overlays.value.forEach((overlay) => overlay.setMap(null));
+    overlays.value = [];
 
     const allItems = store.getAllTimelineItems();
     if (Array.isArray(allItems)) {
@@ -103,6 +110,39 @@ const updateTimelineMarkers = () => {
                     position: position,
                     map: mapInstance.value,
                     title: item.title,
+                });
+
+                // 마커 클릭 시 오버레이 표시
+                window.kakao.maps.event.addListener(marker, 'click', () => {
+                    // 기존 오버레이 제거
+                    overlays.value.forEach((overlay) => overlay.setMap(null));
+                    overlays.value = [];
+
+                    const content = `
+                        <div class="overlay-content">
+                            <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
+                            <h3>${item.title}</h3>
+                            <p>${item.address}</p>
+                            <button class="overlay-btn" data-id="${item.id}">자세히 보기</button>
+                        </div>
+                    `;
+
+                    const overlay = new window.kakao.maps.CustomOverlay({
+                        content: content,
+                        position: position,
+                        map: mapInstance.value,
+                    });
+
+                    overlays.value.push(overlay);
+
+                    // "자세히 보기" 버튼 클릭 시 Vue Router를 사용하여 페이지 이동
+                    const overlayBtn = overlay.a.querySelector('.overlay-btn');
+                    overlayBtn.addEventListener('click', (event) => {
+                        const itemId = event.target.getAttribute('data-id');
+                        if (itemId) {
+                            router.push({ name: 'CapsuleDetail', params: { id: itemId } });
+                        }
+                    });
                 });
 
                 timelineMarkers.value.push(marker);
@@ -187,7 +227,6 @@ const handleResize = () => {
 onMounted(async () => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
-
     try {
         const jwtToken = localStorage.getItem('jwtToken');
         console.log('Retrieved JWT token:', jwtToken); // JWT 토큰 로그
@@ -229,13 +268,14 @@ onBeforeUnmount(() => {
     window.removeEventListener('resize', handleResize);
 
     timelineMarkers.value.forEach((marker) => marker.setMap(null));
+    overlays.value.forEach((overlay) => overlay.setMap(null));
     if (userMarker.value) {
         userMarker.value.setMap(null);
     }
 });
 </script>
 
-<style scoped>
+<style>
 .map-wrapper {
     position: relative;
     width: 100%;
@@ -280,5 +320,75 @@ onBeforeUnmount(() => {
     padding: 10px;
     border-radius: 5px;
     z-index: 1000;
+}
+
+.overlay-content {
+    top: -115px;
+    padding: 10px 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: 'Nanum Gothic', sans-serif;
+    text-align: center;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.overlay-content::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    transform: translateX(-50%);
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #f9f9f9;
+}
+
+.overlay-content h3 {
+    margin: 10px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.overlay-content p {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.overlay-btn {
+    padding: 5px;
+    font-size: 14px;
+    color: #f9f9f9;
+    background-color: #686d76;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    text-decoration: none;
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+.overlay-btn:hover {
+    background-color: #373a40;
+}
+
+.overlay-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #f9f9f9;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #686d76;
+    transition: color 0.3s ease;
+}
+
+.overlay-close-btn:hover {
+    color: #373a40;
 }
 </style>

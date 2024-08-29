@@ -63,9 +63,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useTimelineStore } from '@/stores/timelineStore';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import CapsuleCodePopup from './CapsuleCodePopup.vue';
 
 const router = useRouter();
