@@ -139,5 +139,10 @@ export const useTimelineStore = defineStore('timeline', {
                 this.loading = false;
             }
         },
+
+        // 새 타임라인 아이템을 추가하는 함수
+        addTimelineItem(newItem) {
+            this.myCapsules.push(newItem);
+        },
     },
 });
