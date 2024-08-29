@@ -23,7 +23,7 @@ export const useTimelineStore = defineStore('timeline', {
             this.loading = true;
             this.error = null;
             try {
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('jwtToken');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const response = await axios.get(url, { params, headers });
                 this[stateKey] = response.data;
@@ -59,7 +59,7 @@ export const useTimelineStore = defineStore('timeline', {
             this.loading = true;
             this.error = null;
             try {
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('jwtToken');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const response = await axios.post(`${API_BASE_URL}/capsule/create`, newCapsule, { headers });
                 this.myCapsules.push(response.data);
@@ -76,7 +76,7 @@ export const useTimelineStore = defineStore('timeline', {
             this.loading = true;
             this.error = null;
             try {
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('jwtToken');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 await axios.delete(`${API_BASE_URL}/capsule/${capsuleId}`, { headers });
                 this.myCapsules = this.myCapsules.filter((capsule) => capsule.id !== capsuleId);
@@ -92,7 +92,7 @@ export const useTimelineStore = defineStore('timeline', {
             this.loading = true;
             this.error = null;
             try {
-                const token = localStorage.getItem('token');
+                const token = localStorage.getItem('jwtToken');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const response = await axios.put(`${API_BASE_URL}/capsule/${capsuleId}`, updatedData, { headers });
                 const index = this.myCapsules.findIndex((capsule) => capsule.id === capsuleId);
