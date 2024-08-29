@@ -13,9 +13,9 @@
         </p>
         <div v-if="landmark.content && landmark.content.text" v-html="landmark.content.text"></div>
         <div class="button-container">
-            <button @click="addMyPage">Add my capsule</button>
+            <button @click="addMyPage">Add to my capsule</button>
             <button @click="goBack">Back to List</button>
-            <button v-if="isAdmin" @click="update">update</button>
+            <button v-if="isAdmin" @click="update">Update</button>
         </div>
     </div>
     <div v-else>
@@ -62,10 +62,11 @@ const addMyPage = () => {
             title: landmark.value.title,
             dateRange: landmark.value.content.daterange,
             location: landmark.value.location,
-            coordinates: { lat: landmark.value.coordinates.lat, lng: landmark.value.coordinates.lng },
+            lat: landmark.value.latitude,
+            lng: landmark.value.longitude,
         };
 
-        if (newItem.coordinates.lat && newItem.coordinates.lng) {
+        if (newItem.lat && newItem.lng) {
             timelineStore.addTimelineItem(newItem);
             router.push('/mypage');
         } else {

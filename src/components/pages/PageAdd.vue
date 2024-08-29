@@ -35,7 +35,7 @@
                         <textarea
                             class="capsule-content"
                             id="daterange"
-                            v-model="landmark.content.daterange"
+                            v-model="landmarkContentDaterange"
                             required
                             rows="2"
                         ></textarea>
@@ -45,7 +45,7 @@
                         <textarea
                             class="capsule-content"
                             id="subtitle"
-                            v-model="landmark.content.subtitle"
+                            v-model="landmarkContentSubtitle"
                             required
                             rows="2"
                         ></textarea>
@@ -55,7 +55,7 @@
                         <textarea
                             class="capsule-content"
                             id="text"
-                            v-model="landmark.content.text"
+                            v-model="landmarkContentText"
                             required
                             rows="2"
                         ></textarea>
@@ -430,8 +430,11 @@ const createTimeCapsule = () => {
     const token = localStorage.getItem('jwtToken');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+    // 관리자인 경우 엔드포인트를 /landmark/create로 설정
+    const endpoint = isAdmin.value ? 'http://localhost:8088/landmark/create' : 'http://localhost:8088/capsule/create';
+
     axios
-        .post('http://localhost:8088/capsule/create', capsuleData, {
+        .post(endpoint, capsuleData, {
             headers,
             withCredentials: true,
         })
