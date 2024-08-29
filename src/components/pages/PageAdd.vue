@@ -286,12 +286,22 @@ const createTimeCapsule = () => {
         address: address.value,
         latitude: lat.value,
         longitude: lng.value,
+        kakaoId: kakaoId.value,
     };
 
-    // const params = kakaoId.value;
+    const token = localStorage.getItem('jwtToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    console.log(token);
+    console.log(headers);
 
     axios
-    .post(`https://localhost:8088/capsule/create?kakaoId=${kakaoId.value}`, capsuleData)
+    .post("http://localhost:8088/capsule/create", 
+        capsuleData, 
+        {
+            headers,
+            withCredentials: true
+        }
+    )
     .then((response) => {
         console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
     })
@@ -305,6 +315,7 @@ const createTimeCapsule = () => {
     console.log('타임캡슐 개봉일 : ', unlockDate.value);
     console.log('타임캡슐 위도 : ', lat.value);
     console.log('타임캡슐 경도 : ', lng.value);
+    console.log('타임캡슐 주소 : ', address.value);
     console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
 };
 
