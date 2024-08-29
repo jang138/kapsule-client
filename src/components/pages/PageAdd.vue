@@ -5,7 +5,7 @@
             <button class="refresh-location-btn" @click="refreshUserLocation">🔄</button>
         </div>
         <div class="location-info" v-if="address">
-            <p>현재 위치 : {{ address }}</p>
+            <p>{{ userRole === 'ROLE_ADMIN' ? '선택한 위치' : '현재 위치' }} : {{ address }}</p>
         </div>
 
         <div class="time-capsule-form-group">
@@ -53,28 +53,22 @@
                 <div class="opening-date-box">
                     <p class="box-title">타임캡슐 개봉일 설정</p>
                     <div class="radio-group">
-                        <label><input type="radio" v-model="openingDate" value="5일 뒤" /> 5일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="10일 뒤" /> 10일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="30일 뒤" /> 30일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="5" /> 5일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="10" /> 10일 뒤</label>
+                        <label><input type="radio" v-model="selectedDateOpt" value="30" /> 30일 뒤</label>
                         <label class="direct-setting">
-                            <input type="radio" v-model="openingDate" value="직접 설정" /> 직접 설정
+                            <input type="radio" v-model="selectedDateOpt" value="customizing" /> 직접 설정
                             <input
-                                v-if="openingDate === '직접 설정'"
+                                v-if="selectedDateOpt === 'customizing'"
                                 type="date"
                                 v-model="customDate"
+                                :min="minDate"
+                                :max="maxDate"
                                 @change="updateCustomDate"
                             />
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <!-- 비공개 여부 설정 -->
-            <div class="form-group private-setting-group">
-                <label for="isPrivate">
-                    타임캡슐 비공개
-                    <input type="checkbox" id="isPrivate" v-model="isPrivate" />
-                </label>
             </div>
 
             <div class="button-wrapper">
@@ -85,6 +79,8 @@
 </template>
 
 <script setup>
+import axios from 'axios';
+import router  from '@/router';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const mapContainer = ref(null);
@@ -100,13 +96,24 @@ const images = ref([null, null, null]); // 이미지가 들어갈 배열 (3개)
 const selectedIndex = ref(-1);
 const fileInput = ref(null);
 
-const openingDate = ref('');
-const isPrivate = ref(false);
+const selectedDateOpt = ref('');
 const customDate = ref('');
+const unlockDate = ref('');
+
+const today = new Date();
+const minDate = today.toISOString().split('T')[0];
+const maxDate = new Date(today.setFullYear(today.getFullYear() + 1))
+    .toISOString().split('T')[0];
+
+const lat = ref('');
+const lng = ref('');
+
+const kakaoId = ref('');
 
 const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
+const userRole = ref('');
 const isContentLimitExceeded = computed(() => hasExceededLimit.value);
 
 watch(content, (newValue) => {
@@ -121,6 +128,43 @@ watch(content, (newValue) => {
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
+});
+
+// JWT 토큰 디코딩 함수
+const decodeJWT = (token) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(''),
+        );
+
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        return null;
+    }
+};
+
+onMounted(() => {
+    loadKakaoMap(mapContainer.value);
+    window.addEventListener('resize', handleResize);
+    // JWT 토큰에서 role과 kakaoId 추출
+    const jwtToken = localStorage.getItem('jwtToken');
+    if (jwtToken) {
+        const decodedToken = decodeJWT(jwtToken);
+        if (decodedToken) {
+            userRole.value = decodedToken.role;
+            kakaoId.value = decodedToken.sub;
+            console.log('User Role:', userRole.value);
+            console.log('Kakao ID:', kakaoId.value);
+        }
+    }
 });
 
 onBeforeUnmount(() => {
@@ -141,9 +185,44 @@ const loadKakaoMap = (container) => {
 
             mapInstance.value = new window.kakao.maps.Map(container, options);
 
+            if (userRole.value === 'ROLE_ADMIN') {
+                // 관리자용 지도 클릭 이벤트 추가
+                window.kakao.maps.event.addListener(mapInstance.value, 'click', function (mouseEvent) {
+                    const latlng = mouseEvent.latLng;
+                    updateMarkerPosition(latlng.getLat(), latlng.getLng());
+                });
+            }
+
             refreshUserLocation();
         });
     };
+};
+
+const updateMarkerPosition = (lat, lng) => {
+    const newPosition = new window.kakao.maps.LatLng(lat, lng);
+
+    if (marker.value) {
+        marker.value.setPosition(newPosition);
+    } else {
+        marker.value = new window.kakao.maps.Marker({
+            position: newPosition,
+            map: mapInstance.value,
+        });
+    }
+
+    mapInstance.value.setCenter(newPosition);
+    updateAddressFromCoords(lat, lng);
+};
+
+const updateAddressFromCoords = (lat, lng) => {
+    const geocoder = new window.kakao.maps.services.Geocoder();
+    geocoder.coord2Address(lng, lat, (result, status) => {
+        if (status === window.kakao.maps.services.Status.OK) {
+            address.value = result[0].address.address_name;
+        } else {
+            address.value = 'Failed to convert address.';
+        }
+    });
 };
 
 const handleResize = () => {
@@ -156,31 +235,9 @@ const refreshUserLocation = () => {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                userLocation.value = new window.kakao.maps.LatLng(lat, lng);
-                mapInstance.value.setCenter(userLocation.value);
-                mapInstance.value.setLevel(2);
-
-                if (marker.value) {
-                    marker.value.setMap(null);
-                }
-
-                marker.value = new window.kakao.maps.Marker({
-                    position: userLocation.value,
-                    map: mapInstance.value,
-                    title: '사용자의 위치',
-                    draggable: false,
-                });
-
-                const geocoder = new window.kakao.maps.services.Geocoder();
-                geocoder.coord2Address(lng, lat, (result, status) => {
-                    if (status === window.kakao.maps.services.Status.OK) {
-                        address.value = result[0].address.address_name;
-                    } else {
-                        address.value = 'Failed to convert address.';
-                    }
-                });
+                lat.value = position.coords.latitude;
+                lng.value = position.coords.longitude;
+                updateMarkerPosition(lat.value, lng.value);
             },
             (error) => {
                 console.error('Error getting user location: ', error);
@@ -189,14 +246,6 @@ const refreshUserLocation = () => {
     } else {
         console.error('Geolocation is not supported by this browser.');
     }
-};
-
-const createTimeCapsule = () => {
-    console.log('타임캡슐 타이틀 : ', title.value);
-    console.log('타임캡슐 내용 : ', content.value);
-    console.log('타임캡슐 사진 : ', images.value);
-    console.log('타임캡슐 개봉일 : ', openingDate.value);
-    console.log('타임캡슐 비공개 :', isPrivate.value);
 };
 
 // 이미지를 선택하는 함수
@@ -227,6 +276,63 @@ const onImageUpload = (event) => {
 const updateCustomDate = (event) => {
     customDate.value = event.target.value;
 };
+
+watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
+    if (newSelectedDateOpt === 'customizing') {
+        unlockDate.value = newCustomDate; 
+        console.log('Updated unlockDate:', unlockDate.value);
+
+    } else {
+        const checkedOpt = parseInt(newSelectedDateOpt);
+        const calculatedDate = new Date(today);
+        calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
+
+        unlockDate.value = calculatedDate.toISOString().split('T')[0];
+    }
+})
+
+const createTimeCapsule = () => {
+    const capsuleData = {
+        title: title.value,
+        content: content.value,
+        unlockDate: unlockDate.value,
+        address: address.value,
+        latitude: lat.value,
+        longitude: lng.value,
+        kakaoId: kakaoId.value,
+    };
+
+    const token = localStorage.getItem('jwtToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    axios
+    .post("http://localhost:8088/capsule/create", 
+        capsuleData, 
+        {
+            headers,
+            withCredentials: true
+        }
+    )
+    .then((response) => {
+        console.log('타임캡슐이 성공적으로 생성되었습니다:', response.data);
+        // router.push({ name : 'PageMain' });
+    })
+    .catch((error) => {
+        console.error('타임캡슐 생성 중 오류가 발생했습니다:', error);
+    });
+
+    console.log('타임캡슐 타이틀 : ', title.value);
+    console.log('타임캡슐 내용 : ', content.value);
+    // console.log('타임캡슐 사진 : ', images.value);
+    console.log('타임캡슐 개봉일 : ', unlockDate.value);
+    console.log('타임캡슐 위도 : ', lat.value);
+    console.log('타임캡슐 경도 : ', lng.value);
+    console.log('타임캡슐 주소 : ', address.value);
+    console.log('타임캡슐 생성자 kakaoId : ', kakaoId.value);
+    router.push('/');
+
+};
+
 </script>
 
 <style scoped>
