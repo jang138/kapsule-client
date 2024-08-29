@@ -112,6 +112,11 @@ const updateTimelineMarkers = () => {
                     title: item.title,
                 });
 
+                // Check if the unlock date is in the future and if the capsule is a landmark
+                const unlockDate = new Date(item.unlockDate);
+                const currentDate = new Date();
+                const isLocked = item.capsuleType !== 2 && unlockDate > currentDate;
+
                 // 마커 클릭 시 오버레이 표시
                 window.kakao.maps.event.addListener(marker, 'click', () => {
                     // 기존 오버레이 제거
@@ -123,7 +128,11 @@ const updateTimelineMarkers = () => {
                             <button class="overlay-close-btn" onclick="this.parentElement.parentElement.style.display='none';">✖</button>
                             <h3>${item.title}</h3>
                             <p>${item.address}</p>
-                            <button class="overlay-btn" data-id="${item.id}">자세히 보기</button>
+                            ${
+                                isLocked
+                                    ? `<p>🔒</p>`
+                                    : `<button class="overlay-btn" data-id="${item.id}">자세히 보기</button>`
+                            }
                         </div>
                     `;
 
@@ -136,13 +145,15 @@ const updateTimelineMarkers = () => {
                     overlays.value.push(overlay);
 
                     // "자세히 보기" 버튼 클릭 시 Vue Router를 사용하여 페이지 이동
-                    const overlayBtn = overlay.a.querySelector('.overlay-btn');
-                    overlayBtn.addEventListener('click', (event) => {
-                        const itemId = event.target.getAttribute('data-id');
-                        if (itemId) {
-                            router.push({ name: 'CapsuleDetail', params: { id: itemId } });
-                        }
-                    });
+                    if (!isLocked) {
+                        const overlayBtn = overlay.a.querySelector('.overlay-btn');
+                        overlayBtn.addEventListener('click', (event) => {
+                            const itemId = event.target.getAttribute('data-id');
+                            if (itemId) {
+                                router.push({ name: 'CapsuleDetail', params: { id: itemId } });
+                            }
+                        });
+                    }
                 });
 
                 timelineMarkers.value.push(marker);
@@ -356,6 +367,11 @@ onBeforeUnmount(() => {
     margin: 10px 0;
     font-size: 14px;
     color: #666;
+}
+
+.overlay-content p.locked {
+    font-size: 24px;
+    text-align: center;
 }
 
 .overlay-btn {
