@@ -52,8 +52,8 @@
                 </div>
                 <h2>공유 캡슐</h2>
                 <div class="timeline-items">
-                    <div v-for="item in filteredSharedCapsules" :key="item.id" class="timeline-item">
-                        <button class="delete-button" @click.stop="deleteSharedCapsule(item.id)">
+                    <div v-for="capsule in filteredSharedCapsules" :key="capsule.id" class="timeline-item">
+                        <button class="delete-button" @click.stop="deleteSharedCapsule(capsule.id)">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 id="Layer_1"
@@ -67,7 +67,12 @@
                                 />
                             </svg>
                         </button>
-                        <div class="item-content" @click="navigateToMain(item)">
+                        <div class="item-content" @click="navigateToMain(capsule)">
+                            <h3>{{ capsule.title }}</h3>
+                            <p>열람 가능 날짜: {{ capsule.unlockDate }}</p>
+                            <p>주소: {{ capsule.address }}</p>
+                        </div>
+                        <div class="item-arrow" @click="navigateToMain(capsule)">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                                 <path d="M10 17l5-5-5-5v10z" fill="currentColor" />
                             </svg>
