@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h2>{{ isEdit ? '랜드마크 수정' : '새 랜드마크 추가' }}</h2>
+        <h2>새 랜드마크 추가</h2>
         <form @submit.prevent="submitLandmark">
             <div>
                 <label for="title">제목:</label>
@@ -41,7 +41,7 @@
                 <input type="date" id="unlockDate" v-model="landmark.unlockDate" required />
             </div>
 
-            <button type="submit">{{ isEdit ? '수정' : '추가' }}</button>
+            <button type="submit">랜드마크 추가</button>
         </form>
     </div>
 </template>
@@ -50,7 +50,6 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMemberStore } from '@/stores/memberStore';
-// import axios from 'axios';
 import axiosInstance from '@/axios';
 
 const router = useRouter();
