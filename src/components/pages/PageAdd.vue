@@ -10,38 +10,107 @@
 
         <div class="time-capsule-form-group">
             <div class="form-group">
-                <input type="text" class="capsule-title" v-model="title" placeholder="타임캡슐 제목을 입력하세요" />
+                <!-- 제목 입력 필드 -->
+                <input
+                    type="text"
+                    class="capsule-title"
+                    :value="isAdmin ? landmark.title : capsule.title"
+                    @input="isAdmin ? (landmark.title = $event.target.value) : (capsule.title = $event.target.value)"
+                    placeholder="타임캡슐 제목을 입력하세요"
+                />
             </div>
 
             <div class="input-group">
                 <!-- 일반 사용자일 경우 보이는 부분 -->
-                <textarea
-                    v-if="!isAdmin"
-                    class="capsule-content"
-                    v-model="content"
-                    :class="{ error: isContentLimitExceeded }"
-                    placeholder="타임캡슐에 추가할 내용을 작성하세요"
-                    rows="10"
-                ></textarea>
-                <div v-if="!isAdmin" id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
-                    {{ content.length }}/500
+                <div v-if="!isAdmin">
+                    <textarea
+                        class="capsule-content"
+                        v-model="capsule.content"
+                        :class="{ error: isContentLimitExceeded }"
+                        placeholder="타임캡슐에 추가할 내용을 작성하세요"
+                        rows="10"
+                    ></textarea>
+                    <div id="char-count" :class="['char-count', { exceeded: isContentLimitExceeded }]">
+                        {{ capsule.content.length }}/500
+                    </div>
+
+                    <div>
+                        <label for="lat">위도 (Latitude):</label>
+                        <textarea
+                            type="number"
+                            id="lat"
+                            v-model="capsule.latitude"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="lng">경도 (Longitude):</label>
+                        <textarea
+                            type="number"
+                            id="lng"
+                            v-model="capsule.longitude"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
                 </div>
 
                 <!-- 관리자일 경우 보이는 부분 -->
                 <div v-if="isAdmin">
                     <div>
                         <label for="daterange">운영시간:</label>
-                        <textarea class="capsule-content" id="daterange" v-model="content" required rows="2"></textarea>
+                        <textarea
+                            class="capsule-content"
+                            id="daterange"
+                            v-model="landmark.content.daterange"
+                            required
+                            rows="2"
+                        ></textarea>
                     </div>
-
                     <div>
                         <label for="subtitle">소제목:</label>
-                        <textarea class="capsule-content" id="subtitle" v-model="content" required rows="2"></textarea>
+                        <textarea
+                            class="capsule-content"
+                            id="subtitle"
+                            v-model="landmark.content.subtitle"
+                            required
+                            rows="2"
+                        ></textarea>
                     </div>
-
                     <div>
                         <label for="text">본문:</label>
-                        <textarea class="capsule-content" id="text" v-model="content" required rows="2"></textarea>
+                        <textarea
+                            class="capsule-content"
+                            id="text"
+                            v-model="landmark.content.text"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="lat">위도 (Latitude):</label>
+                        <textarea
+                            type="number"
+                            id="lat"
+                            v-model="landmark.coordinates.lat"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="lng">경도 (Longitude):</label>
+                        <textarea
+                            type="number"
+                            id="lng"
+                            v-model="landmark.coordinates.lng"
+                            step="0.00000000000001"
+                            required
+                            rows="2"
+                        ></textarea>
                     </div>
                 </div>
             </div>
@@ -69,19 +138,19 @@
             </div>
 
             <!-- 타임캡슐 개봉일 설정 -->
-            <div class="form-group">
+            <div v-if="!isAdmin" class="form-group">
                 <div class="opening-date-box">
                     <p class="box-title">타임캡슐 개봉일 설정</p>
                     <div class="radio-group">
-                        <label><input type="radio" v-model="openingDate" value="5일 뒤" /> 5일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="10일 뒤" /> 10일 뒤</label>
-                        <label><input type="radio" v-model="openingDate" value="30일 뒤" /> 30일 뒤</label>
+                        <label><input type="radio" v-model="capsule.openingDate" value="5일 뒤" /> 5일 뒤</label>
+                        <label><input type="radio" v-model="capsule.openingDate" value="10일 뒤" /> 10일 뒤</label>
+                        <label><input type="radio" v-model="capsule.openingDate" value="30일 뒤" /> 30일 뒤</label>
                         <label class="direct-setting">
-                            <input type="radio" v-model="openingDate" value="직접 설정" /> 직접 설정
+                            <input type="radio" v-model="capsule.openingDate" value="직접 설정" /> 직접 설정
                             <input
-                                v-if="openingDate === '직접 설정'"
+                                v-if="capsule.openingDate === '직접 설정'"
                                 type="date"
-                                v-model="customDate"
+                                v-model="capsule.customDate"
                                 @change="updateCustomDate"
                             />
                         </label>
@@ -97,8 +166,10 @@
                 </label>
             </div>
 
+            <!-- 제출 버튼 -->
             <div class="button-wrapper">
-                <button class="btn-create_capsule" @click="createTimeCapsule">생성</button>
+                <button v-if="!isAdmin" @click="createTimeCapsule">타임캡슐 생성</button>
+                <button v-if="isAdmin" @click="submitLandmark">랜드마크 추가</button>
             </div>
         </div>
     </div>
@@ -107,8 +178,15 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useMemberStore } from '@/stores/memberStore';
+import { useRouter } from 'vue-router';
+import axiosInstance from '@/axios';
+
+const router = useRouter();
 
 const memberStore = useMemberStore();
+// 멤버 정보가 없을 경우에 대한 기본 처리
+const member = computed(() => memberStore.member);
+
 const mapContainer = ref(null);
 const mapInstance = ref(null);
 const userLocation = ref(null);
@@ -116,15 +194,12 @@ const marker = ref(null);
 const address = ref('');
 
 // 타임캡슐 폼 관련 상태 관리
-const title = ref('');
-const content = ref('');
+
 const images = ref([null, null, null]); // 이미지가 들어갈 배열 (3개)
 const selectedIndex = ref(-1);
 const fileInput = ref(null);
 
-const openingDate = ref('');
 const isPrivate = ref(false);
-const customDate = ref('');
 
 const contentLimit = 499;
 const hasExceededLimit = ref(false);
@@ -134,9 +209,66 @@ const isContentLimitExceeded = computed(() => hasExceededLimit.value);
 // 관리자인지 확인
 const isAdmin = computed(() => memberStore.member && memberStore.member.role === 'ROLE_ADMIN');
 
-watch(content, (newValue) => {
+// 캡슐 객체 초기화
+const capsule = ref({
+    title: '',
+    content: '',
+    openingDate: '',
+    customDate: '',
+    member: member.value
+        ? {
+              id: member.value.id,
+              nickname: member.value.nickname,
+              kakaoId: member.value.kakaoId,
+              role: member.value.role,
+          }
+        : null,
+});
+
+// 랜드마크 객체 초기화
+const landmark = ref({
+    title: '',
+    location: '',
+    content: {
+        daterange: '',
+        subtitle: '',
+        text: '',
+    },
+    coordinates: {
+        lat: null,
+        lng: null,
+    },
+    unlockDate: '',
+    capsuleType: 2,
+    member: member.value
+        ? {
+              id: member.value.id,
+              nickname: member.value.nickname,
+              kakaoId: member.value.kakaoId,
+              role: member.value.role,
+          }
+        : null,
+});
+
+const submitLandmark = async () => {
+    try {
+        await axiosInstance.post('/landmark/create', landmark.value);
+        alert('랜드마크가 성공적으로 추가되었습니다!');
+        router.push('/landmark'); // 랜드마크 목록 페이지로 이동
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error('랜드마크 추가 중 오류 발생:', error.response.data);
+            alert(error.response.data);
+        } else {
+            console.error('예기치 않은 오류가 발생했습니다:', error);
+            alert('랜드마크 저장 중 오류가 발생했습니다.');
+        }
+    }
+};
+
+watch(capsule.value.content, (newValue) => {
     if (newValue.length > contentLimit) {
-        content.value = newValue.slice(0, contentLimit + 1);
+        capsule.value.content = newValue.slice(0, contentLimit + 1);
         hasExceededLimit.value = true;
     } else {
         hasExceededLimit.value = false;
@@ -144,6 +276,13 @@ watch(content, (newValue) => {
 });
 
 onMounted(() => {
+    // // 로그인되지 않은 경우 처리
+    // if (!member.value) {
+    //     alert('로그인 후 이용해 주세요.');
+    //     router.push('/'); // 로그인 페이지나 홈으로 리다이렉트
+    //     return;
+    // }
+
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
 });
@@ -216,12 +355,29 @@ const refreshUserLocation = () => {
     }
 };
 
-const createTimeCapsule = () => {
-    console.log('타임캡슐 타이틀 : ', title.value);
-    console.log('타임캡슐 내용 : ', content.value);
-    console.log('타임캡슐 사진 : ', images.value);
-    console.log('타임캡슐 개봉일 : ', openingDate.value);
-    console.log('타임캡슐 비공개 :', isPrivate.value);
+// const createTimeCapsule = () => {
+//     console.log('타임캡슐 타이틀 : ', title.value);
+//     console.log('타임캡슐 내용 : ', content.value);
+//     console.log('타임캡슐 사진 : ', images.value);
+//     console.log('타임캡슐 개봉일 : ', openingDate.value);
+//     console.log('타임캡슐 비공개 :', isPrivate.value);
+// };
+
+// 타임캡슐 생성 함수
+const createTimeCapsule = async () => {
+    try {
+        const response = await axiosInstance.post('/capsule/create', capsule.value);
+        alert(response.data); // 성공 메시지 표시
+        router.push('/capsules'); // 타임캡슐 목록 페이지로 이동
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error('캡슐 추가 중 오류 발생:', error.response.data);
+            alert(error.response.data);
+        } else {
+            console.error('예기치 않은 오류가 발생했습니다:', error);
+            alert('캡슐 저장 중 오류가 발생했습니다.');
+        }
+    }
 };
 
 // 이미지를 선택하는 함수
@@ -250,7 +406,7 @@ const onImageUpload = (event) => {
 
 // 날짜 선택 함수
 const updateCustomDate = (event) => {
-    customDate.value = event.target.value;
+    capsule.value.customDate = event.target.value;
 };
 </script>
 

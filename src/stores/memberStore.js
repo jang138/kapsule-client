@@ -1,68 +1,98 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
+const API_BASE_URL = 'http://localhost:8088';
 
 export const useMemberStore = defineStore('memberStore', {
     state: () => ({
         token: null,
         member: null,
+        imageUrl: null,
         isLoggedIn: false,
-        isInitialized: false, // 초기화 여부 상태 추가
     }),
 
     getters: {
-        isAdmin(state) {
-            // member가 존재하고 그 member의 role이 'ADMIN'인 경우에만 true 반환
-            return state.member?.role === 'ADMIN';
-        },
+        isAuthenticated: (state) => !!state.token,
     },
 
     actions: {
-        initializeStore() {
-            if (this.isInitialized) return; // 이미 초기화되었으면 아무것도 하지 않음
-
+        async checkAuth() {
             const token = localStorage.getItem('jwtToken');
             if (token) {
-                this.token = token;
+                this.setToken(token);
                 this.isLoggedIn = true;
-                this.fetchMemberData();
-            } else {
-                this.token = null;
-                this.isLoggedIn = false;
-                this.member = null;
+                await this.fetchMemberData();
             }
+        },
 
-            this.isInitialized = true; // 스토어 초기화 완료
+        async authenticateWithToken(token) {
+            if (this.isLoggedIn && this.token) {
+                console.log('Already logged in');
+                return;
+            }
+            this.setToken(token);
+            await this.fetchMemberData();
+            this.isLoggedIn = true;
+        },
+
+        async setToken(token) {
+            this.token = token; // 토큰 설정
+            localStorage.setItem('jwtToken', token); // 로컬 스토리지에 토큰 저장
+            this.decodeImageUrlFromToken(token); // 이미지 URL 디코딩
+            this.isLoggedIn = true; // 로그인 상태 설정
+            await this.fetchMemberData(); // 회원 데이터 가져오기
+        },
+
+        decodeImageUrlFromToken(token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                this.imageUrl = decodedToken.profileImage;
+                console.log('Decoded imageUrl from token:', this.imageUrl);
+            } catch (error) {
+                console.error('Error decoding token:', error);
+                this.imageUrl = null;
+            }
         },
 
         async fetchMemberData() {
-            if (!this.token) return;
-
             try {
-                const response = await axios.get('http://localhost:8088/api/v1/member-info', {
-                    headers: {
-                        Authorization: `Bearer ${this.token}`,
-                    },
+                const response = await axios.get(`${API_BASE_URL}/api/v1/member-info`, {
+                    headers: { Authorization: `Bearer ${this.token}` },
                 });
                 this.member = response.data;
+                this.decodeImageUrlFromToken(this.token);
             } catch (error) {
                 console.error('Failed to fetch member data:', error);
-                this.clearStore(); // 오류 발생 시 스토어 초기화
+                this.clearAuthentication();
             }
         },
 
-        setToken(token) {
-            this.token = token;
-            this.isLoggedIn = true;
-            localStorage.setItem('jwtToken', token);
-            this.fetchMemberData(); // 토큰 설정 후 사용자 정보 가져오기
+        clearAuthentication() {
+            this.token = null;
+            this.member = null;
+            this.imageUrl = null;
+            this.isLoggedIn = false;
+            localStorage.removeItem('jwtToken');
         },
 
-        clearStore() {
-            this.token = null;
-            this.isLoggedIn = false;
-            this.member = null;
-            this.isInitialized = false;
-            localStorage.removeItem('jwtToken');
+        logout() {
+            this.clearAuthentication();
+        },
+
+        redirectToKakaoLogin() {
+            if (!this.isLoggedIn) {
+                window.location.href = `${API_BASE_URL}/api/v1/auth/oauth2/kakao`;
+            } else {
+                console.log('User is already logged in');
+            }
+        },
+
+        async loginAndFetchUserData(token) {
+            this.setToken(token);
+            this.isLoggedIn = true;
+            await this.fetchMemberData();
+            return this.imageUrl;
         },
     },
 });

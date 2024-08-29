@@ -47,6 +47,7 @@
 </template>
 
 <script>
+import { useMemberStore } from '@/stores/memberStore';
 import axiosInstance from '@/axios';
 
 export default {
@@ -65,20 +66,46 @@ export default {
                     lng: null,
                 },
                 unlockDate: '',
-                capsuleType: 2, // 캡슐 타입을 2로 설정
-                member: {
-                    id: 1, // 임시 멤버 ID
-                    nickname: '관리자', // 임시 닉네임
-                    kakaoId: 'Kakao_TMP_06', // 임시 카카오 ID
-                    role: 'ROLE_ADMIN', // 임시 역할
-                },
+                capsuleType: 2,
+                member: {}, // 초기화
             },
         };
+    },
+    mounted() {
+        // 로그인된 사용자 정보 가져오기
+        const memberStore = useMemberStore();
+        if (memberStore.isLoggedIn && memberStore.member) {
+            this.landmark.member = {
+                id: memberStore.member.id,
+                nickname: memberStore.member.nickname,
+                kakaoId: memberStore.member.kakaoId,
+                role: memberStore.member.role,
+            };
+        } else {
+            // 멤버 정보가 없을 경우 로그인 페이지로 리디렉션 또는 알림
+            alert('로그인이 필요합니다.');
+            this.$router.push('/login'); // 로그인 페이지로 리디렉션
+        }
     },
     methods: {
         async submitLandmark() {
             try {
-                const response = await axiosInstance.post('/landmark/create', this.landmark);
+                // 멤버 정보가 없는 경우 방어 코드 추가
+                if (!this.landmark.member.id) {
+                    throw new Error('멤버 정보가 없습니다. 다시 로그인해주세요.');
+                }
+
+                // Authorization 헤더에 토큰 추가
+                const token = localStorage.getItem('jwtToken'); // 로컬 스토리지에서 토큰 가져오기
+                if (!token) {
+                    throw new Error('유효한 토큰이 없습니다. 다시 로그인해주세요.');
+                }
+
+                const response = await axiosInstance.post('/landmark/create', this.landmark, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 alert(response.data); // 성공 메시지 표시
                 this.$router.push('/landmark'); // 랜드마크 목록 페이지로 이동
             } catch (error) {

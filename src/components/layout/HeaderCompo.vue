@@ -1,134 +1,84 @@
 <template>
     <div class="header">
         <h2 class="title_header" @click="goToMain">Kapsule</h2>
-        <img class="icon_kakao" src="@/assets/icon_kakao.png" alt="KakaoTalk Icon" @click="togglePopup" />
+        <img
+            class="icon_kakao"
+            :src="profileImageSrc"
+            :alt="isLoggedIn ? 'Profile Image' : 'KakaoTalk Icon'"
+            @click="handleKakaoIconClick"
+        />
 
         <!-- 팝업 메뉴 -->
         <div v-if="showPopup" class="popup-menu">
-            <p class="user-name">{{ userNickname }}</p>
+            <p class="user-name">{{ member?.nickname }}</p>
             <p class="user-role">{{ userRoleText }}</p>
             <button class="logout-button" @click="logout">로그아웃</button>
         </div>
     </div>
 </template>
 
-<script>
-import { ref, computed } from 'vue';
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { useMemberStore } from '@/stores/memberStore';
+import { storeToRefs } from 'pinia';
+import kakaoIcon from '@/assets/icon_kakao.png';
 
-export default {
-    name: 'HeaderCompo',
-    setup() {
-        const memberStore = useMemberStore();
-        const router = useRouter(); // Vue Router에 접근하기 위해 useRouter를 사용합니다.
+const router = useRouter();
+const memberStore = useMemberStore();
+const { isLoggedIn, member, imageUrl } = storeToRefs(memberStore);
 
-        const isLoggedIn = computed(() => memberStore.isLoggedIn);
-        const userRole = ref('');
-        const userNickname = ref('');
-        const userRoleText = computed(() => {
-            switch (userRole.value) {
-                case 'ROLE_ADMIN':
-                    return '관리자';
-                case 'ROLE_FREEUSER':
-                    return '일반회원';
-                case 'ROLE_PAIDUSER':
-                    return '구독회원';
-                default:
-                    return ''; // 기본값
-            }
-        });
+const showPopup = ref(false);
 
-        // `ref`를 사용하여 `showPopup` 상태를 반응형으로 관리
-        const showPopup = ref(false);
+const profileImageSrc = computed(() => {
+    return isLoggedIn.value && imageUrl.value ? imageUrl.value : kakaoIcon;
+});
 
-        const fetchUserInfo = async () => {
-            try {
-                const token = localStorage.getItem('jwtToken');
-                if (!token) {
-                    console.warn('No JWT token found');
-                    return;
-                }
+const userRoleText = computed(() => {
+    const roleMap = {
+        ROLE_ADMIN: '관리자',
+        ROLE_FREEUSER: '일반회원',
+        ROLE_PAIDUSER: '구독회원',
+    };
+    return roleMap[member.value?.role] || '';
+});
 
-                const response = await axios.get('http://localhost:8088/api/v1/member-info', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                const userData = response.data;
-
-                console.log(userData);
-
-                userNickname.value = userData.nickname;
-                userRole.value = userData.role;
-            } catch (error) {
-                console.error('Failed to fetch user info:', error);
-            }
-        };
-
-        const togglePopup = () => {
-            if (!isLoggedIn.value) {
-                window.location.href = 'http://localhost:8088/api/v1/auth/oauth2/kakao';
-                return;
-            }
-
-            showPopup.value = !showPopup.value;
-
-            if (showPopup.value) {
-                fetchUserInfo(); // 팝업이 열릴 때 사용자 정보를 가져옴
-                document.addEventListener('click', handleOutsideClick);
-                window.addEventListener('beforeunload', closePopup);
-            } else {
-                removeListeners();
-            }
-        };
-
-        const handleOutsideClick = (event) => {
-            const popup = document.querySelector('.popup-menu');
-            const iconKakao = document.querySelector('.icon_kakao');
-
-            if (popup && !popup.contains(event.target) && !iconKakao.contains(event.target)) {
-                showPopup.value = false;
-                removeListeners();
-            }
-        };
-
-        const removeListeners = () => {
-            document.removeEventListener('click', handleOutsideClick);
-            window.removeEventListener('beforeunload', closePopup);
-        };
-
-        const closePopup = () => {
-            showPopup.value = false;
-        };
-
-        const logout = () => {
-            memberStore.clearStore();
-            showPopup.value = false;
-            removeListeners();
-            window.location.reload();
-        };
-
-        const goToMain = () => {
-            showPopup.value = false;
-            removeListeners();
-            router.push('/'); // router.push('/')로 메인 페이지로 이동
-        };
-
-        return {
-            isLoggedIn,
-            userRole,
-            userNickname,
-            userRoleText,
-            showPopup,
-            togglePopup,
-            logout,
-            goToMain,
-        };
-    },
+const handleKakaoIconClick = () => {
+    if (isLoggedIn.value) {
+        togglePopup();
+    } else {
+        memberStore.redirectToKakaoLogin();
+    }
 };
+
+const togglePopup = async () => {
+    if (!showPopup.value) {
+        await memberStore.fetchMemberData();
+    }
+    showPopup.value = !showPopup.value;
+};
+
+const logout = () => {
+    memberStore.logout();
+    showPopup.value = false;
+    router.push('/');
+};
+
+const goToMain = () => {
+    showPopup.value = false;
+    router.push('/');
+};
+
+watch(imageUrl, (newValue) => {
+    console.log('imageUrl changed:', newValue);
+});
+
+onMounted(async () => {
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+        await memberStore.setToken(token);
+    }
+});
 </script>
 
 <style scoped>
@@ -149,6 +99,10 @@ export default {
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
+    border-radius: 50%; /* 이미지를 원형으로 만듭니다 */
+    object-fit: cover; /* 이미지가 원 안에 꽉 차도록 합니다 */
+    border: 2px solid #ffffff; /* 흰색 테두리 추가 */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* 선택적: 약간의 그림자 효과 추가 */
 }
 
 .popup-menu {

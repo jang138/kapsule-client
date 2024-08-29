@@ -165,7 +165,7 @@ const closePopup = () => {
 
 const submitCapsuleCode = async (code) => {
     try {
-        const kakaoId = '3682548002'; // 실제 사용자의 kakaoId로 교체해야 합니다
+        const kakaoId = '3682620015'; // 실제 사용자의 kakaoId로 교체해야 합니다
         const result = await store.addSharedCapsule(code, kakaoId);
         if (result.success) {
             closePopup();
@@ -219,10 +219,10 @@ const submitCapsuleCode = async (code) => {
     display: flex;
     justify-content: space-between;
     gap: 20px;
+}
 
-    h2 {
-        text-align: center;
-    }
+.timeline-itemContainer h2 {
+    text-align: center;
 }
 
 .timeline-section {
