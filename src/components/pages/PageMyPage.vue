@@ -33,6 +33,7 @@
                             <h3>{{ capsule.title }}</h3>
                             <p>열람 가능 날짜: {{ capsule.unlockDate }}</p>
                             <p>주소: {{ capsule.address }}</p>
+                            <p>캡슐 공유 코드: {{ capsule.capsuleCode }}</p>
                         </div>
                         <div class="item-arrow" @click="navigateToMain(capsule)">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
