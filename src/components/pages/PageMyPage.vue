@@ -313,7 +313,7 @@ const deleteSharedCapsule = async (capsuleId) => {
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     width: 75%;
 }
 
