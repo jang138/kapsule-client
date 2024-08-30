@@ -2,7 +2,10 @@
     <div v-if="landmark" class="landmark-detail-container">
         <h2>{{ landmark.title }}</h2>
         <div class="landmark-image">
-            <img :src="landmark.image" alt="Landmark Image" />
+            <img
+                src="https://mblogthumb-phinf.pstatic.net/MjAxODA0MDVfMTU5/MDAxNTIyOTA0MDczNDgx.9XbBJvQC0Cjd0_vRovae7PCd_96zzyNyQyc1nEtDVuAg.Xn7MGvNx5yiUOFsJUHzs8EBXTRiNvo5igzpZZ9NSYCYg.PNG.royalculture/%EA%B2%BD%EB%B3%B5%EA%B6%81%EC%82%AC%EC%A7%84.png?type=w800"
+                :alt="landmark.title"
+            />
         </div>
         <p><strong>위치:</strong> {{ landmark.location }}</p>
         <p v-if="landmark.content && landmark.content.daterange">
@@ -163,5 +166,11 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+.landmark-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
 }
 </style>
