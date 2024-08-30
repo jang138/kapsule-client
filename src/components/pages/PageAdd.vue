@@ -148,7 +148,7 @@ const lng = ref('');
 
 const kakaoId = ref('');
 
-const contentLimit = 499;
+// const contentLimit = 499;
 const hasExceededLimit = ref(false);
 
 const userRole = ref('');
@@ -160,13 +160,18 @@ const landmarkContentDaterange = ref('');
 const landmarkContentSubtitle = ref('');
 const landmarkContentText = ref('');
 
-watch(content, (newValue) => {
-    if (newValue.length > contentLimit) {
-        content.value = newValue.slice(0, contentLimit + 1);
-        hasExceededLimit.value = true;
+// 날짜 관련 watch 함수 수정
+watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
+    if (newSelectedDateOpt === 'customizing') {
+        // 커스텀 날짜를 그대로 사용
+        unlockDate.value = newCustomDate;
     } else {
-        hasExceededLimit.value = false;
+        const checkedOpt = parseInt(newSelectedDateOpt);
+        const calculatedDate = new Date();
+        calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
+        unlockDate.value = calculatedDate.toISOString().split('T')[0];
     }
+    console.log('Updated unlockDate:', unlockDate.value); // 디버깅용 로그
 });
 
 onMounted(() => {
@@ -338,6 +343,8 @@ watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
         unlockDate.value = calculatedDate.toISOString().split('T')[0];
     }
 });
+
+// createTimeCapsule 함수 수정
 const createTimeCapsule = () => {
     let capsuleLocation;
     if (isAdmin.value && selectedLocation.value) {
@@ -348,7 +355,7 @@ const createTimeCapsule = () => {
 
     const formData = new FormData();
     formData.append('title', title.value);
-    formData.append('unlockDate', unlockDate.value);
+    formData.append('unlockDate', unlockDate.value); // 이미 올바른 형식으로 저장된 unlockDate 사용
     formData.append('address', address.value);
     formData.append('latitude', capsuleLocation.lat);
     formData.append('longitude', capsuleLocation.lng);
@@ -379,6 +386,8 @@ const createTimeCapsule = () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const endpoint = isAdmin.value ? 'http://localhost:8088/landmark/create' : 'http://localhost:8088/capsule/create';
+
+    console.log('Sending capsule data:', Object.fromEntries(formData)); // 디버깅용 로그
 
     axios
         .post(endpoint, formData, {
