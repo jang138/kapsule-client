@@ -56,24 +56,56 @@ const goBack = () => {
     router.push('/landmark');
 };
 
-const addMyPage = () => {
-    if (landmark.value) {
-        const newItem = {
-            title: landmark.value.title,
-            dateRange: landmark.value.content.daterange,
-            location: landmark.value.address,
-            lat: landmark.value.latitude,
-            lng: landmark.value.longitude,
-            unlockDate: landmark.value.unlockDate,
-            address: landmark.value.address,
-            image: landmark.value.image,
-        };
+// JWT 토큰 디코딩 함수
+const decodeJWT = (token) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(''),
+        );
 
-        if (newItem.lat && newItem.lng) {
-            timelineStore.addTimelineItem(newItem); // 타임라인에 새 아이템 추가
-            router.push('/mypage'); // 마이페이지로 이동
-        } else {
-            console.error('Coordinates are missing in newItem');
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        return null;
+    }
+};
+const addMyPage = async () => {
+    if (landmark.value) {
+        try {
+            const capsuleCode = landmark.value.capsuleCode; // 랜드마크의 capsuleCode 사용
+            const jwtToken = localStorage.getItem('jwtToken');
+            console.log('Retrieved JWT token:', jwtToken); // JWT 토큰 로그
+
+            let kakaoId;
+
+            if (jwtToken) {
+                const decodedToken = decodeJWT(jwtToken);
+                console.log('Decoded JWT token:', decodedToken); // 디코딩된 토큰 로그
+
+                kakaoId = decodedToken?.sub;
+                console.log('capsuleCode:', capsuleCode);
+                console.log('kakaoId:', kakaoId);
+
+                const result = await timelineStore.addSharedCapsule(capsuleCode, kakaoId);
+
+                if (result.success) {
+                    console.log('Shared capsule successfully added:', result.data);
+                    router.push('/mypage'); // 성공 시 마이페이지로 이동
+                } else {
+                    console.error('Failed to add shared capsule:', result.error);
+                }
+            } else {
+                console.error('JWT token is missing');
+            }
+        } catch (error) {
+            console.error('Error in addMyPage:', error);
         }
     } else {
         console.error('Landmark is not defined');
