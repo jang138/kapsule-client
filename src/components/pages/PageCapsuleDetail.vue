@@ -148,8 +148,8 @@ const fetchCapsuleData = async () => {
         lat.value = data.latitude;
         lng.value = data.longitude;
         imageList.value = data.images.map(image =>
-        `${serverBaseURL}/${image.replace(/\\\\/g, '/')}`
-    ) || [];
+                        `${serverBaseURL}/${image.replace(/\\/g, '/')}`
+                        ) || [];
 
         if (capsuleType.value === 2) {
             landmarkData.value = data;
