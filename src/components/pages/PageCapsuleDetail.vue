@@ -142,11 +142,14 @@ const fetchCapsuleData = async () => {
         });
 
         const data = response.data;
+        const serverBaseURL = 'http://localhost:8088';
 
         capsuleType.value = data.capsuleType;
         lat.value = data.latitude;
         lng.value = data.longitude;
-        imageList.value = data.images || [];
+        imageList.value = data.images.map(image =>
+                        `${serverBaseURL}/${image.replace(/\\/g, '/')}`
+                        ) || [];
 
         if (capsuleType.value === 2) {
             landmarkData.value = data;
