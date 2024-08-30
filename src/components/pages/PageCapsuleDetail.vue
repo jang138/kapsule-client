@@ -150,6 +150,7 @@ const fetchCapsuleData = async () => {
         imageList.value = data.images.map(image =>
                         `${serverBaseURL}/${image.replace(/\\/g, '/')}`
                         ) || [];
+        console.log(imageList.value);
 
         if (capsuleType.value === 2) {
             landmarkData.value = data;
@@ -276,7 +277,7 @@ onMounted(() => {
 .map-wrapper {
     position: relative;
     width: 100%;
-    height: 40%;
+    height: 20%;
 }
 
 .map-container {
@@ -327,6 +328,7 @@ onMounted(() => {
 }
 
 .info-box {
+    width: 90%;
     display: flex;
     align-items: center;
     padding: 10px;
@@ -366,9 +368,12 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    flex-direction: row;
+    justify-content: center;
 }
 
 .image-box {
+    width: 50%;
     border: 1px solid #a2b5bb;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
@@ -386,4 +391,5 @@ onMounted(() => {
     max-height: 100%;
     object-fit: cover;
 }
+
 </style>
