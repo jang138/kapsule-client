@@ -30,10 +30,7 @@
                     @click="handleClick(landmark)"
                 >
                     <div class="landmark-photo">
-                        <img
-                            src="https://mblogthumb-phinf.pstatic.net/MjAxODA0MDVfMTU5/MDAxNTIyOTA0MDczNDgx.9XbBJvQC0Cjd0_vRovae7PCd_96zzyNyQyc1nEtDVuAg.Xn7MGvNx5yiUOFsJUHzs8EBXTRiNvo5igzpZZ9NSYCYg.PNG.royalculture/%EA%B2%BD%EB%B3%B5%EA%B6%81%EC%82%AC%EC%A7%84.png?type=w800"
-                            alt="Landmark Photo"
-                        />
+                        <img :src="landmark.image" alt="Landmark Photo" />
                     </div>
                     <div class="landmark-info">
                         <!-- content가 파싱된 경우에만 subtitle과 daterange 표시 -->
@@ -119,14 +116,14 @@ const showOptions = ref(false);
 // Computed properties
 const availableRegions = computed(() => store.availableRegions);
 const filteredLandmarks = computed(() => {
-    return store
-        .filteredLandmarks(searchQuery.value, selectedRegions.value)
-        .filter((landmark) => landmark.capsuleType === 2)
-        .map((landmark) => ({
-            ...landmark,
-            imageUrl: '/src/assets/경복궁.png' || landmark.imageUrl, // 기본 이미지 경로 설정
-        }));
+    return (
+        store
+            .filteredLandmarks(searchQuery.value, selectedRegions.value)
+            // .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
+            .filter((landmark) => landmark['capsule-type'] === 2)
+    );
 });
+
 // Methods
 const handleClick = (landmark) => {
     console.log(`Clicked on ${landmark.title}`);

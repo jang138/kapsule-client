@@ -2,10 +2,7 @@
     <div v-if="landmark" class="landmark-detail-container">
         <h2>{{ landmark.title }}</h2>
         <div class="landmark-image">
-            <img
-                src="https://mblogthumb-phinf.pstatic.net/MjAxODA0MDVfMTU5/MDAxNTIyOTA0MDczNDgx.9XbBJvQC0Cjd0_vRovae7PCd_96zzyNyQyc1nEtDVuAg.Xn7MGvNx5yiUOFsJUHzs8EBXTRiNvo5igzpZZ9NSYCYg.PNG.royalculture/%EA%B2%BD%EB%B3%B5%EA%B6%81%EC%82%AC%EC%A7%84.png?type=w800"
-                :alt="landmark.title"
-            />
+            <img :src="landmark.image" alt="Landmark Image" />
         </div>
         <p><strong>위치:</strong> {{ landmark.location }}</p>
         <p v-if="landmark.content && landmark.content.daterange">
@@ -18,7 +15,6 @@
         <div class="button-container">
             <button @click="addMyPage">Add to my capsule</button>
             <button @click="goBack">Back to List</button>
-            <button v-if="isAdmin" @click="update">Update</button>
         </div>
     </div>
     <div v-else>
@@ -39,8 +35,8 @@ const router = useRouter();
 
 const landmarkId = parseInt(route.params.id);
 
-// 관리자인지 확인
-const isAdmin = computed(() => store.isAdmin);
+// // 관리자인지 확인
+// const isAdmin = computed(() => store.isAdmin);
 
 // computed에서 landmark를 가져올 때 content가 유효한지 검사
 const landmark = computed(() => {
@@ -167,11 +163,5 @@ button {
 
 button:hover {
     background-color: #0056b3;
-}
-
-.landmark-image img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
 }
 </style>
