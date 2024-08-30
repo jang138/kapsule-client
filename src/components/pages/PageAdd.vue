@@ -160,20 +160,6 @@ const landmarkContentDaterange = ref('');
 const landmarkContentSubtitle = ref('');
 const landmarkContentText = ref('');
 
-// 날짜 관련 watch 함수 수정
-watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
-    if (newSelectedDateOpt === 'customizing') {
-        // 커스텀 날짜를 그대로 사용
-        unlockDate.value = newCustomDate;
-    } else {
-        const checkedOpt = parseInt(newSelectedDateOpt);
-        const calculatedDate = new Date();
-        calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
-        unlockDate.value = calculatedDate.toISOString().split('T')[0];
-    }
-    console.log('Updated unlockDate:', unlockDate.value); // 디버깅용 로그
-});
-
 onMounted(() => {
     loadKakaoMap(mapContainer.value);
     window.addEventListener('resize', handleResize);
@@ -332,16 +318,18 @@ const updateCustomDate = (event) => {
     customDate.value = event.target.value;
 };
 
+// 날짜 관련 watch 함수 수정
 watch([selectedDateOpt, customDate], ([newSelectedDateOpt, newCustomDate]) => {
     if (newSelectedDateOpt === 'customizing') {
+        // 커스텀 날짜를 그대로 사용
         unlockDate.value = newCustomDate;
     } else {
         const checkedOpt = parseInt(newSelectedDateOpt);
-        const calculatedDate = new Date(today);
+        const calculatedDate = new Date();
         calculatedDate.setDate(calculatedDate.getDate() + checkedOpt);
-
         unlockDate.value = calculatedDate.toISOString().split('T')[0];
     }
+    console.log('Updated unlockDate:', unlockDate.value); // 디버깅용 로그
 });
 
 // createTimeCapsule 함수 수정
