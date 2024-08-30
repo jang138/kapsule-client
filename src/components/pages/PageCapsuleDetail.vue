@@ -147,9 +147,7 @@ const fetchCapsuleData = async () => {
         capsuleType.value = data.capsuleType;
         lat.value = data.latitude;
         lng.value = data.longitude;
-        imageList.value = data.images.map(image =>
-                        `${serverBaseURL}/${image.replace(/\\/g, '/')}`
-                        ) || [];
+        imageList.value = data.images.map((image) => `${serverBaseURL}/${image.replace(/\\/g, '/')}`) || [];
         console.log(imageList.value);
 
         if (capsuleType.value === 2) {
@@ -277,7 +275,7 @@ onMounted(() => {
 .map-wrapper {
     position: relative;
     width: 100%;
-    height: 20%;
+    height: 50%;
 }
 
 .map-container {
@@ -328,7 +326,7 @@ onMounted(() => {
 }
 
 .info-box {
-    width: 90%;
+    width: 98%;
     display: flex;
     align-items: center;
     padding: 10px;
@@ -366,7 +364,6 @@ onMounted(() => {
 
 .image-grid {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
     flex-direction: row;
     justify-content: center;
@@ -391,5 +388,4 @@ onMounted(() => {
     max-height: 100%;
     object-fit: cover;
 }
-
 </style>
