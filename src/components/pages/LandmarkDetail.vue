@@ -15,7 +15,6 @@
         <div class="button-container">
             <button @click="addMyPage">Add to my capsule</button>
             <button @click="goBack">Back to List</button>
-            <button v-if="isAdmin" @click="update">Update</button>
         </div>
     </div>
     <div v-else>
@@ -36,8 +35,8 @@ const router = useRouter();
 
 const landmarkId = parseInt(route.params.id);
 
-// 관리자인지 확인
-const isAdmin = computed(() => store.isAdmin);
+// // 관리자인지 확인
+// const isAdmin = computed(() => store.isAdmin);
 
 // computed에서 landmark를 가져올 때 content가 유효한지 검사
 const landmark = computed(() => {

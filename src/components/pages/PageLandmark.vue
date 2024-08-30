@@ -116,9 +116,12 @@ const showOptions = ref(false);
 // Computed properties
 const availableRegions = computed(() => store.availableRegions);
 const filteredLandmarks = computed(() => {
-    return store
-        .filteredLandmarks(searchQuery.value, selectedRegions.value)
-        .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
+    return (
+        store
+            .filteredLandmarks(searchQuery.value, selectedRegions.value)
+            // .filter((landmark) => landmark.capsuleType === 2); // capsule-type이 2인 것만 필터링
+            .filter((landmark) => landmark['capsule-type'] === 2)
+    );
 });
 
 // Methods

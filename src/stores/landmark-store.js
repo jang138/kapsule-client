@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { useMemberStore } from '@/stores/memberStore';
 
 // 앞서 생성한 axiosInstance를 가져옵니다
-// import axios from 'axios';
+import axios from 'axios';
 import axiosInstance from '@/axios';
 
 export const useLandmarkStore = defineStore('landmark', {
@@ -37,9 +37,8 @@ export const useLandmarkStore = defineStore('landmark', {
     actions: {
         async fetchLandmarks() {
             try {
-                // const token = localStorage.getItem('jwtToken');
-                // const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axiosInstance.get('/landmark');
+                const response = await axios.get('/landmarks.json');
+                // const response = await axiosInstance.get('/landmark');
                 this.landmarks = response.data; // 서버로부터 받은 데이터를 state에 저장
             } catch (error) {
                 console.error('Failed to fetch landmarks:', error);
