@@ -66,9 +66,12 @@ export const useLandmarkStore = defineStore('landmark', {
                 console.log(`Sending DELETE request to /landmark/${landmarkId}`);
                 const token = localStorage.getItem('jwtToken');
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axiosInstance.delete(`http://localhost:8088/landmark/${landmarkId}`, {
-                    headers,
-                });
+                const response = await axiosInstance.delete(
+                    `https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app/landmark/${landmarkId}`,
+                    {
+                        headers,
+                    },
+                );
 
                 // 서버로부터의 응답 상태 코드가 204 또는 200(일반적인 경우)이면 삭제된 것으로 간주하고 배열을 업데이트합니다.
                 if (response.status === 204 || response.status === 200) {

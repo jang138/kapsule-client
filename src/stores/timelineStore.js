@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8088';
+const API_BASE_URL = 'https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app';
 
 export const useTimelineStore = defineStore('timeline', {
     state: () => ({

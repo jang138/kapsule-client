@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-const API_BASE_URL = 'http://localhost:8088';
+const API_BASE_URL = 'https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app';
 
 export const useMemberStore = defineStore('memberStore', {
     state: () => ({

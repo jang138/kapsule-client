@@ -373,7 +373,9 @@ const createTimeCapsule = () => {
     const token = localStorage.getItem('jwtToken');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const endpoint = isAdmin.value ? 'http://localhost:8088/landmark/create' : 'http://localhost:8088/capsule/create';
+    const endpoint = isAdmin.value
+        ? 'https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app/landmark/create'
+        : 'https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app/capsule/create';
 
     console.log('Sending capsule data:', Object.fromEntries(formData)); // 디버깅용 로그
 

@@ -142,7 +142,7 @@ const fetchCapsuleData = async () => {
         });
 
         const data = response.data;
-        const serverBaseURL = 'http://localhost:8088';
+        const serverBaseURL = 'https://port-0-kapsule-server-m0kjv4e106cdef3c.sel4.cloudtype.app';
 
         capsuleType.value = data.capsuleType;
         lat.value = data.latitude;
