@@ -167,15 +167,23 @@ const fetchCapsuleData = async () => {
 
         loadKakaoMap(mapContainer.value);
     } catch (error) {
-        if (error.response && error.response.status === 403) {
-            // 접근 권한 없음
-            errorMessage.value = '접근 권한이 없습니다.';
-        } else if (error.response && error.response.status === 404) {
-            // 데이터 없음
-            errorMessage.value = '타임캡슐을 찾을 수 없습니다.';
+        console.error('Error fetching capsule data:', error);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+            console.error('Error status:', error.response.status);
+            if (error.response.status === 403) {
+                errorMessage.value = '접근 권한이 없습니다.';
+            } else if (error.response.status === 404) {
+                errorMessage.value = '타임캡슐을 찾을 수 없습니다.';
+            } else {
+                errorMessage.value = `서버 오류: ${error.response.status}`;
+            }
+        } else if (error.request) {
+            console.error('Error request:', error.request);
+            errorMessage.value = '서버에 연결할 수 없습니다.';
         } else {
-            // 기타 오류
-            errorMessage.value = '타임캡슐 데이터 가져오기 오류';
+            console.error('Error message:', error.message);
+            errorMessage.value = '알 수 없는 오류가 발생했습니다.';
         }
     }
 };
